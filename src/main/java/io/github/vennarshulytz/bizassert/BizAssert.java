@@ -153,6 +153,13 @@ public final class BizAssert {
     // ---------- isTrue ----------
 
     /**
+     * 断言表达式为 true（无消息，使用默认）
+     */
+    public static void isTrue(boolean expression) {
+        isTrue(expression, "expression must be true");
+    }
+
+    /**
      * 断言表达式为 true
      *
      * @param expression 布尔表达式
@@ -165,10 +172,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 true（无消息，使用默认）
+     * 断言表达式为 true（占位符消息）
      */
-    public static void isTrue(boolean expression) {
-        isTrue(expression, "expression must be true");
+    public static void isTrue(boolean expression, String message, Object... args) {
+        if (!expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
     }
 
     /**
@@ -177,6 +186,15 @@ public final class BizAssert {
     public static void isTrue(boolean expression, Supplier<String> messageSupplier) {
         if (!expression) {
             throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+    }
+
+    /**
+     * 断言表达式为 true（延迟构建消息 + 占位符参数）
+     */
+    public static void isTrue(boolean expression, Supplier<String> messageSupplier, Object... args) {
+        if (!expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
         }
     }
 
@@ -190,11 +208,11 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 true（占位符消息）
+     * 断言表达式为 true（带错误码 + 占位符参数）
      */
-    public static void isTrue(boolean expression, String message, Object... args) {
+    public static void isTrue(boolean expression, int code, String message, Object... args) {
         if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(code, formatMessage(message, args));
         }
     }
 
@@ -226,11 +244,47 @@ public final class BizAssert {
     }
 
     /**
+     * 断言表达式为 true（指定异常工厂 + 占位符参数）
+     */
+    public static void isTrue(boolean expression, String message, ExceptionFactory factory, Object... args) {
+        if (!expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+    }
+
+    /**
      * 断言表达式为 true（指定异常工厂 + 错误码）
      */
     public static void isTrue(boolean expression, int code, String message, ExceptionFactory factory) {
         if (!expression) {
             throw newException(code, message, factory);
+        }
+    }
+
+    /**
+     * 断言表达式为 true（指定异常工厂 + 错误码 + 占位符参数）
+     */
+    public static void isTrue(boolean expression, int code, String message, ExceptionFactory factory, Object... args) {
+        if (!expression) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+    }
+
+    /**
+     * 断言表达式为 true（指定异常工厂 + 错误枚举）
+     */
+    public static void isTrue(boolean expression, IErrorCode errorCode, ExceptionFactory factory) {
+        if (!expression) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+    }
+
+    /**
+     * 断言表达式为 true（指定异常工厂 + 错误枚举 + 占位符参数）
+     */
+    public static void isTrue(boolean expression, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (!expression) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
         }
     }
 
@@ -247,7 +301,38 @@ public final class BizAssert {
         }
     }
 
+    /**
+     * 断言表达式为 true（label 机制）
+     * <p>自动生成消息：{label} must be true</p>
+     *
+     * <pre>{@code
+     * BizAssert.isTrueAs(order.isPaid(), "paid");
+     * // 等价于 BizAssert.isTrue(userId, "{0} must be true", "paid");
+     * }</pre>
+     */
+    public static void isTrueAs(boolean expression, String label) {
+        if (!expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be true");
+        }
+    }
+
+    /**
+     * 断言表达式为 true（label 机制 + 错误码）
+     */
+    public static void isTrueAs(boolean expression, int code, String label) {
+        if (!expression) {
+            throw newException(code, label + " must be true");
+        }
+    }
+
     // ---------- isFalse ----------
+
+    /**
+     * 断言表达式为 false（无消息）
+     */
+    public static void isFalse(boolean expression) {
+        isFalse(expression, "expression must be false");
+    }
 
     /**
      * 断言表达式为 false
@@ -259,10 +344,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 false（无消息）
+     * 断言表达式为 false（占位符消息）
      */
-    public static void isFalse(boolean expression) {
-        isFalse(expression, "expression must be false");
+    public static void isFalse(boolean expression, String message, Object... args) {
+        if (expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
     }
 
     /**
@@ -284,11 +371,11 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 false（占位符消息）
+     * 断言表达式为 false（带错误码 + 占位符参数）
      */
-    public static void isFalse(boolean expression, String message, Object... args) {
+    public static void isFalse(boolean expression, int code, String message, Object... args) {
         if (expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(code, formatMessage(message, args));
         }
     }
 
@@ -320,6 +407,51 @@ public final class BizAssert {
     }
 
     /**
+     * 断言表达式为 false（指定异常工厂 + 占位符参数）
+     */
+    public static void isFalse(boolean expression, String message, ExceptionFactory factory, Object... args) {
+        if (expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+    }
+
+    /**
+     * 断言表达式为 false（指定异常工厂 + 带错误码）
+     */
+    public static void isFalse(boolean expression, int code, String message, ExceptionFactory factory) {
+        if (expression) {
+            throw newException(code, message, factory);
+        }
+    }
+
+    /**
+     * 断言表达式为 false（指定异常工厂 + 带错误码 + 占位符参数）
+     */
+    public static void isFalse(boolean expression, int code, String message, ExceptionFactory factory, Object... args) {
+        if (expression) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+    }
+
+    /**
+     * 断言表达式为 false（指定异常工厂 + 错误枚举）
+     */
+    public static void isFalse(boolean expression, IErrorCode errorCode, ExceptionFactory factory) {
+        if (expression) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+    }
+
+    /**
+     * 断言表达式为 false（指定异常工厂 + 错误枚举 + 占位符参数）
+     */
+    public static void isFalse(boolean expression, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (expression) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+    }
+
+    /**
      * 断言表达式为 false（直接传入异常实例）
      */
     public static void isFalseOrThrow(boolean expression, Supplier<? extends RuntimeException> exceptionSupplier) {
@@ -328,9 +460,40 @@ public final class BizAssert {
         }
     }
 
+    /**
+     * 断言表达式为 false（label 机制）
+     * <p>自动生成消息：{label} must be false</p>
+     *
+     * <pre>{@code
+     * BizAssert.isFalseAs(order.isPaid(), "paid");
+     * // 等价于 BizAssert.isFalse(userId, "{0} must be false", "paid");
+     * }</pre>
+     */
+    public static void isFalseAs(boolean expression, String label) {
+        if (expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be false");
+        }
+    }
+
+    /**
+     * 断言表达式为 false（label 机制 + 错误码）
+     */
+    public static void isFalseAs(boolean expression, int code, String label) {
+        if (expression) {
+            throw newException(code, label + " must be false");
+        }
+    }
+
     // ========================================================================
     //  notNull — Pass-through，返回非 null 的值
     // ========================================================================
+
+    /**
+     * 断言对象不为 null（无消息）
+     */
+    public static <T> T notNull(T object) {
+        return notNull(object, "parameter must not be null");
+    }
 
     /**
      * 断言对象不为 null（Pass-through）
@@ -352,10 +515,16 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象不为 null（无消息）
+     * 断言对象不为 null（占位符消息）
+     * <p><b>注意：</b>当只有一个额外参数且类型为 String 时，编译器会优先匹配此方法而非
+     * {@link #notNull(Object, String)} 。如果不需要占位符替换，请使用
+     * {@link #notNull(Object, String)} 的精确两参数形式。</p>
      */
-    public static <T> T notNull(T object) {
-        return notNull(object, "parameter must not be null");
+    public static <T> T notNull(T object, String message, Object... args) {
+        if (object == null) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return object;
     }
 
     /**
@@ -364,6 +533,16 @@ public final class BizAssert {
     public static <T> T notNull(T object, Supplier<String> messageSupplier) {
         if (object == null) {
             throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return object;
+    }
+
+    /**
+     * 断言对象不为 null（延迟构建消息 + 占位符参数）
+     */
+    public static <T> T notNull(T object, Supplier<String> messageSupplier, Object... args) {
+        if (object == null) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
         }
         return object;
     }
@@ -379,14 +558,11 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象不为 null（占位符消息）
-     * <p><b>注意：</b>当只有一个额外参数且类型为 String 时，编译器会优先匹配此方法而非
-     * {@link #notNull(Object, String)} 。如果不需要占位符替换，请使用
-     * {@link #notNull(Object, String)} 的精确两参数形式。</p>
+     * 断言对象不为 null（带错误码 + 占位符参数）
      */
-    public static <T> T notNull(T object, String message, Object... args) {
+    public static <T> T notNull(T object, int code, String message, Object... args) {
         if (object == null) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(code, formatMessage(message, args));
         }
         return object;
     }
@@ -422,11 +598,51 @@ public final class BizAssert {
     }
 
     /**
+     * 断言对象不为 null（指定异常工厂 + 占位符参数）
+     */
+    public static <T> T notNull(T object, String message, ExceptionFactory factory, Object... args) {
+        if (object == null) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return object;
+    }
+
+    /**
      * 断言对象不为 null（指定异常工厂 + 错误码）
      */
     public static <T> T notNull(T object, int code, String message, ExceptionFactory factory) {
         if (object == null) {
             throw newException(code, message, factory);
+        }
+        return object;
+    }
+
+    /**
+     * 断言对象不为 null（指定异常工厂 + 错误码 + 占位符参数）
+     */
+    public static <T> T notNull(T object, int code, String message, ExceptionFactory factory, Object... args) {
+        if (object == null) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return object;
+    }
+
+    /**
+     * 断言对象不为 null（指定异常工厂 + 错误枚举）
+     */
+    public static <T> T notNull(T object, IErrorCode errorCode, ExceptionFactory factory) {
+        if (object == null) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return object;
+    }
+
+    /**
+     * 断言对象不为 null（指定异常工厂 + 错误枚举 + 占位符参数）
+     */
+    public static <T> T notNull(T object, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (object == null) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
         }
         return object;
     }
@@ -470,6 +686,13 @@ public final class BizAssert {
     // ---------- isNull ----------
 
     /**
+     * 断言对象为 null（无消息）
+     */
+    public static void isNull(Object object) {
+        isNull(object, "parameter must be null");
+    }
+
+    /**
      * 断言对象为 null
      */
     public static void isNull(Object object, String message) {
@@ -479,10 +702,48 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象为 null（无消息）
+     * 断言对象为 null（占位符消息）
      */
-    public static void isNull(Object object) {
-        isNull(object, "parameter must be null");
+    public static void isNull(Object object, String message, Object... args) {
+        if (object != null) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+    }
+
+    /**
+     * 断言对象为 null（延迟构建消息）
+     */
+    public static void isNull(Object object, Supplier<String> messageSupplier) {
+        if (object != null) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+    }
+
+    /**
+     * 断言对象为 null（延迟构建消息 + 占位符参数）
+     */
+    public static void isNull(Object object, Supplier<String> messageSupplier, Object... args) {
+        if (object != null) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+    }
+
+    /**
+     * 断言对象为 null（带错误码）
+     */
+    public static void isNull(Object object, int code, String message) {
+        if (object != null) {
+            throw newException(code, message);
+        }
+    }
+
+    /**
+     * 断言对象为 null（带错误码 + 占位符参数）
+     */
+    public static void isNull(Object object, int code, String message, Object... args) {
+        if (object != null) {
+            throw newException(code, formatMessage(message, args));
+        }
     }
 
     /**
@@ -494,9 +755,113 @@ public final class BizAssert {
         }
     }
 
+    /**
+     * 断言对象为 null（错误枚举 + 占位符参数）
+     */
+    public static void isNull(Object object, IErrorCode errorCode, Object... args) {
+        if (object != null) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+    }
+
+    /**
+     * 断言对象为 null（指定异常工厂）
+     */
+    public static void isNull(Object object, String message, ExceptionFactory factory) {
+        if (object != null) {
+            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+    }
+
+    /**
+     * 断言对象为 null（指定异常工厂 + 占位符参数）
+     */
+    public static void isNull(Object object, String message, ExceptionFactory factory, Object... args) {
+        if (object != null) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+    }
+
+    /**
+     * 断言对象为 null（指定异常工厂 + 错误码）
+     */
+    public static void isNull(Object object, int code, String message, ExceptionFactory factory) {
+        if (object != null) {
+            throw newException(code, message, factory);
+        }
+    }
+
+    /**
+     * 断言对象为 null（指定异常工厂 + 错误码 + 占位符参数）
+     */
+    public static void isNull(Object object, int code, String message, ExceptionFactory factory, Object... args) {
+        if (object != null) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+    }
+
+    /**
+     * 断言对象为 null（指定异常工厂 + 错误枚举）
+     */
+    public static void isNull(Object object, IErrorCode errorCode, ExceptionFactory factory) {
+        if (object != null) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+    }
+
+    /**
+     * 断言对象为 null（指定异常工厂 + 错误枚举 + 占位符参数）
+     */
+    public static void isNull(Object object, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (object != null) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+    }
+
+    /**
+     * 断言对象为 null（直接传入异常实例）
+     */
+    public static void isNullOrThrow(Object object, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (object != null) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+    }
+
+    /**
+     * 断言对象为 null（label 机制）
+     * <p>自动生成消息：{label} must be null</p>
+     *
+     * <pre>{@code
+     * BizAssert.isNullAs(userId, "userId");
+     * // 等价于 BizAssert.isNull(userId, "{0} must be null", "userId");
+     * }</pre>
+     */
+    public static void isNullAs(Object object, String label) {
+        if (object != null) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be null");
+        }
+    }
+
+    /**
+     * 断言对象为 null（label 机制 + 错误码）
+     */
+    public static void isNullAs(Object object, int code, String label) {
+        if (object != null) {
+            throw newException(code, label + " must be null");
+        }
+    }
+
+
     // ========================================================================
     //  notEmpty (String) — Pass-through
     // ========================================================================
+
+    /**
+     * 断言字符串不为空（无消息）
+     */
+    public static String notEmpty(String text) {
+        return notEmpty(text, "parameter must not be empty");
+    }
 
     /**
      * 断言字符串不为 null 且不为空字符串（Pass-through）
@@ -512,12 +877,7 @@ public final class BizAssert {
         return text;
     }
 
-    /**
-     * 断言字符串不为空（无消息）
-     */
-    public static String notEmpty(String text) {
-        return notEmpty(text, "parameter must not be empty");
-    }
+
 
     /**
      * 断言字符串不为空（延迟构建消息）
