@@ -63,10 +63,9 @@ public final class BizAssert {
     // ==================== 默认异常工厂 ====================
 
     /**
-     * 默认异常工厂（原子引用，保证线程安全）
+     * 默认异常工厂
      */
-    private static final AtomicReference<ExceptionFactory> DEFAULT_FACTORY =
-            new AtomicReference<>(BizException::new);
+    private static volatile ExceptionFactory DEFAULT_FACTORY = BizException::new;
 
     /**
      * 标记是否已被自定义设置过（仅允许一次）
@@ -85,12 +84,12 @@ public final class BizAssert {
      */
     public static void setDefaultExceptionFactory(ExceptionFactory factory) {
         Objects.requireNonNull(factory, "ExceptionFactory must not be null");
-        synchronized (DEFAULT_FACTORY) {
+        synchronized (BizAssert.class) {
             if (factoryConfigured) {
                 throw new IllegalStateException(
                         "Default ExceptionFactory has already been configured. It can only be set once.");
             }
-            DEFAULT_FACTORY.set(factory);
+            DEFAULT_FACTORY = factory;
             factoryConfigured = true;
         }
     }
@@ -99,15 +98,15 @@ public final class BizAssert {
      * 获取当前默认异常工厂（主要用于测试）
      */
     static ExceptionFactory getDefaultExceptionFactory() {
-        return DEFAULT_FACTORY.get();
+        return DEFAULT_FACTORY;
     }
 
     /**
      * 重置默认异常工厂为初始状态（仅用于测试）
      */
     static void resetDefaultExceptionFactory() {
-        synchronized (DEFAULT_FACTORY) {
-            DEFAULT_FACTORY.set(BizException::new);
+        synchronized (BizAssert.class) {
+            DEFAULT_FACTORY = BizException::new;
             factoryConfigured = false;
         }
     }
@@ -136,7 +135,7 @@ public final class BizAssert {
      * 使用默认工厂创建并抛出异常
      */
     private static RuntimeException newException(int code, String message) {
-        return DEFAULT_FACTORY.get().create(code, message);
+        return DEFAULT_FACTORY.create(code, message);
     }
 
     /**
@@ -235,6 +234,15 @@ public final class BizAssert {
     }
 
     /**
+     * 断言表达式为 true（指定异常工厂 + 默认消息）
+     */
+    public static void isTrue(boolean expression, ExceptionFactory factory) {
+        if (!expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, "expression must be true", factory);
+        }
+    }
+
+    /**
      * 断言表达式为 true（指定异常工厂）
      */
     public static void isTrue(boolean expression, String message, ExceptionFactory factory) {
@@ -325,6 +333,25 @@ public final class BizAssert {
         }
     }
 
+    /**
+     * 断言表达式为 true（label 机制 + 指定异常工厂）
+     * <p>自动生成消息：{label} must be true</p>
+     */
+    public static void isTrueAs(boolean expression, String label, ExceptionFactory factory) {
+        if (!expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be true", factory);
+        }
+    }
+
+    /**
+     * 断言表达式为 true（label 机制 + 错误码 + 指定异常工厂）
+     */
+    public static void isTrueAs(boolean expression, int code, String label, ExceptionFactory factory) {
+        if (!expression) {
+            throw newException(code, label + " must be true", factory);
+        }
+    }
+
     // ---------- isFalse ----------
 
     /**
@@ -394,6 +421,15 @@ public final class BizAssert {
     public static void isFalse(boolean expression, IErrorCode errorCode, Object... args) {
         if (expression) {
             throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+    }
+
+    /**
+     * 断言表达式为 false（指定异常工厂 + 默认消息）
+     */
+    public static void isFalse(boolean expression, ExceptionFactory factory) {
+        if (expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, "expression must be false", factory);
         }
     }
 
@@ -481,6 +517,30 @@ public final class BizAssert {
     public static void isFalseAs(boolean expression, int code, String label) {
         if (expression) {
             throw newException(code, label + " must be false");
+        }
+    }
+
+    /**
+     * 断言表达式为 false（label 机制 + 指定异常工厂）
+     * <p>自动生成消息：{label} must be false</p>
+     *
+     * <pre>{@code
+     * BizAssert.isFalseAs(order.isPaid(), "paid");
+     * // 等价于 BizAssert.isFalse(userId, "{0} must be false", "paid");
+     * }</pre>
+     */
+    public static void isFalseAs(boolean expression, String label, ExceptionFactory factory) {
+        if (expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be false", factory);
+        }
+    }
+
+    /**
+     * 断言表达式为 false（label 机制 + 错误码 + 指定异常工厂）
+     */
+    public static void isFalseAs(boolean expression, int code, String label, ExceptionFactory factory) {
+        if (expression) {
+            throw newException(code, label + " must be false", factory);
         }
     }
 
@@ -588,6 +648,16 @@ public final class BizAssert {
     }
 
     /**
+     * 断言对象不为 null（指定异常工厂 + 默认消息）
+     */
+    public static <T> T notNull(T object, ExceptionFactory factory) {
+        if (object == null) {
+            throw newException(ErrorCodes.UNSPECIFIED, "parameter must not be null", factory);
+        }
+        return object;
+    }
+
+    /**
      * 断言对象不为 null（指定异常工厂）
      */
     public static <T> T notNull(T object, String message, ExceptionFactory factory) {
@@ -683,6 +753,27 @@ public final class BizAssert {
         return object;
     }
 
+    /**
+     * 断言对象不为 null（label 机制 + 指定异常工厂）
+     * <p>自动生成消息：{label} must not be null</p>
+     */
+    public static <T> T notNullAs(T object, String label, ExceptionFactory factory) {
+        if (object == null) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be null", factory);
+        }
+        return object;
+    }
+
+    /**
+     * 断言对象不为 null（label 机制 + 错误码 + 指定异常工厂）
+     */
+    public static <T> T notNullAs(T object, int code, String label, ExceptionFactory factory) {
+        if (object == null) {
+            throw newException(code, label + " must not be null", factory);
+        }
+        return object;
+    }
+
     // ---------- isNull ----------
 
     /**
@@ -761,6 +852,15 @@ public final class BizAssert {
     public static void isNull(Object object, IErrorCode errorCode, Object... args) {
         if (object != null) {
             throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+    }
+
+    /**
+     * 断言对象为 null（指定异常工厂 + 默认消息）
+     */
+    public static void isNull(Object object, ExceptionFactory factory) {
+        if (object != null) {
+            throw newException(ErrorCodes.UNSPECIFIED, "parameter must be null", factory);
         }
     }
 
@@ -851,6 +951,25 @@ public final class BizAssert {
         }
     }
 
+    /**
+     * 断言对象为 null（label 机制 + 指定异常工厂）
+     * <p>自动生成消息：{label} must be null</p>
+     */
+    public static void isNullAs(Object object, String label, ExceptionFactory factory) {
+        if (object != null) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be null", factory);
+        }
+    }
+
+    /**
+     * 断言对象为 null（label 机制 + 错误码 + 指定异常工厂）
+     */
+    public static void isNullAs(Object object, int code, String label, ExceptionFactory factory) {
+        if (object != null) {
+            throw newException(code, label + " must be null", factory);
+        }
+    }
+
 
     // ========================================================================
     //  notEmpty (String) — Pass-through
@@ -877,7 +996,15 @@ public final class BizAssert {
         return text;
     }
 
-
+    /**
+     * 断言字符串不为空（占位符消息）
+     */
+    public static String notEmpty(String text, String message, Object... args) {
+        if (text == null || text.isEmpty()) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return text;
+    }
 
     /**
      * 断言字符串不为空（延迟构建消息）
@@ -885,6 +1012,16 @@ public final class BizAssert {
     public static String notEmpty(String text, Supplier<String> messageSupplier) {
         if (text == null || text.isEmpty()) {
             throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不为空（延迟构建消息 + 占位符参数）
+     */
+    public static String notEmpty(String text, Supplier<String> messageSupplier, Object... args) {
+        if (text == null || text.isEmpty()) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
         }
         return text;
     }
@@ -900,11 +1037,11 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空（占位符消息）
+     * 断言字符串不为空（带错误码 + 占位符参数）
      */
-    public static String notEmpty(String text, String message, Object... args) {
+    public static String notEmpty(String text, int code, String message, Object... args) {
         if (text == null || text.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(code, formatMessage(message, args));
         }
         return text;
     }
@@ -930,11 +1067,71 @@ public final class BizAssert {
     }
 
     /**
+     * 断言字符串不为空（指定异常工厂 + 默认消息）
+     */
+    public static String notEmpty(String text, ExceptionFactory factory) {
+        if (text == null || text.isEmpty()) {
+            throw newException(ErrorCodes.UNSPECIFIED, "parameter must not be empty", factory);
+        }
+        return text;
+    }
+
+    /**
      * 断言字符串不为空（指定异常工厂）
      */
     public static String notEmpty(String text, String message, ExceptionFactory factory) {
         if (text == null || text.isEmpty()) {
             throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不为空（指定异常工厂 + 占位符参数）
+     */
+    public static String notEmpty(String text, String message, ExceptionFactory factory, Object... args) {
+        if (text == null || text.isEmpty()) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不为空（指定异常工厂 + 错误码）
+     */
+    public static String notEmpty(String text, int code, String message, ExceptionFactory factory) {
+        if (text == null || text.isEmpty()) {
+            throw newException(code, message, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不为空（指定异常工厂 + 错误码 + 占位符参数）
+     */
+    public static String notEmpty(String text, int code, String message, ExceptionFactory factory, Object... args) {
+        if (text == null || text.isEmpty()) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不为空（指定异常工厂 + 错误枚举）
+     */
+    public static String notEmpty(String text, IErrorCode errorCode, ExceptionFactory factory) {
+        if (text == null || text.isEmpty()) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不为空（指定异常工厂 + 错误枚举 + 占位符参数）
+     */
+    public static String notEmpty(String text, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (text == null || text.isEmpty()) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
         }
         return text;
     }
@@ -959,9 +1156,46 @@ public final class BizAssert {
         return text;
     }
 
+    /**
+     * 断言字符串不为空（label 机制 + 错误码）
+     */
+    public static String notEmptyAs(String text, int code, String label) {
+        if (text == null || text.isEmpty()) {
+            throw newException(code, label + " must not be empty");
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不为空（label 机制 + 指定异常工厂）
+     */
+    public static String notEmptyAs(String text, String label, ExceptionFactory factory) {
+        if (text == null || text.isEmpty()) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be empty", factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不为空（label 机制 + 错误码 + 指定异常工厂）
+     */
+    public static String notEmptyAs(String text, int code, String label, ExceptionFactory factory) {
+        if (text == null || text.isEmpty()) {
+            throw newException(code, label + " must not be empty", factory);
+        }
+        return text;
+    }
+
     // ========================================================================
     //  notEmpty (Collection) — Pass-through
     // ========================================================================
+
+    /**
+     * 断言集合不为空（无消息）
+     */
+    public static <E, T extends Collection<E>> T notEmpty(T collection) {
+        return notEmpty(collection, "collection must not be empty");
+    }
 
     /**
      * 断言集合不为 null 且不为空（Pass-through）
@@ -974,10 +1208,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言集合不为空（无消息）
+     * 断言集合不为 null 且不为空（Pass-through + 占位符参数）
      */
-    public static <E, T extends Collection<E>> T notEmpty(T collection) {
-        return notEmpty(collection, "collection must not be empty");
+    public static <E, T extends Collection<E>> T notEmpty(T collection, String message, Object... args) {
+        if (collection == null || collection.isEmpty()) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return collection;
     }
 
     /**
@@ -991,11 +1228,31 @@ public final class BizAssert {
     }
 
     /**
+     * 断言集合不为空（延迟构建消息 + 占位符参数）
+     */
+    public static <E, T extends Collection<E>> T notEmpty(T collection, Supplier<String> messageSupplier, Object... args) {
+        if (collection == null || collection.isEmpty()) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+        return collection;
+    }
+
+    /**
      * 断言集合不为空（带错误码）
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, int code, String message) {
         if (collection == null || collection.isEmpty()) {
             throw newException(code, message);
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合不为空（带错误码 + 占位符参数）
+     */
+    public static <E, T extends Collection<E>> T notEmpty(T collection, int code, String message, Object... args) {
+        if (collection == null || collection.isEmpty()) {
+            throw newException(code, formatMessage(message, args));
         }
         return collection;
     }
@@ -1021,11 +1278,71 @@ public final class BizAssert {
     }
 
     /**
+     * 断言集合不为空（指定异常工厂 + 默认消息）
+     */
+    public static <E, T extends Collection<E>> T notEmpty(T collection, ExceptionFactory factory) {
+        if (collection == null || collection.isEmpty()) {
+            throw newException(ErrorCodes.UNSPECIFIED, "collection must not be empty", factory);
+        }
+        return collection;
+    }
+
+    /**
      * 断言集合不为空（指定异常工厂）
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, String message, ExceptionFactory factory) {
         if (collection == null || collection.isEmpty()) {
             throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合不为空（指定异常工厂 + 占位符参数）
+     */
+    public static <E, T extends Collection<E>> T notEmpty(T collection, String message, ExceptionFactory factory, Object... args) {
+        if (collection == null || collection.isEmpty()) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合不为空（指定异常工厂 + 错误码）
+     */
+    public static <E, T extends Collection<E>> T notEmpty(T collection, int code, String message, ExceptionFactory factory) {
+        if (collection == null || collection.isEmpty()) {
+            throw newException(code, message, factory);
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合不为空（指定异常工厂 + 错误码 + 占位符参数）
+     */
+    public static <E, T extends Collection<E>> T notEmpty(T collection, int code, String message, ExceptionFactory factory, Object... args) {
+        if (collection == null || collection.isEmpty()) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合不为空（指定异常工厂 + 错误枚举）
+     */
+    public static <E, T extends Collection<E>> T notEmpty(T collection, IErrorCode errorCode, ExceptionFactory factory) {
+        if (collection == null || collection.isEmpty()) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合不为空（指定异常工厂 + 错误枚举 + 占位符参数）
+     */
+    public static <E, T extends Collection<E>> T notEmpty(T collection, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (collection == null || collection.isEmpty()) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
         }
         return collection;
     }
@@ -1051,9 +1368,46 @@ public final class BizAssert {
         return collection;
     }
 
+    /**
+     * 断言集合不为空（label 机制 + 错误码）
+     */
+    public static <E, T extends Collection<E>> T notEmptyAs(T collection, int code, String label) {
+        if (collection == null || collection.isEmpty()) {
+            throw newException(code, label + " must not be empty");
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合不为空（label 机制 + 指定异常工厂）
+     */
+    public static <E, T extends Collection<E>> T notEmptyAs(T collection, String label, ExceptionFactory factory) {
+        if (collection == null || collection.isEmpty()) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be empty", factory);
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合不为空（label 机制 + 错误码 + 指定异常工厂）
+     */
+    public static <E, T extends Collection<E>> T notEmptyAs(T collection, int code, String label, ExceptionFactory factory) {
+        if (collection == null || collection.isEmpty()) {
+            throw newException(code, label + " must not be empty", factory);
+        }
+        return collection;
+    }
+
     // ========================================================================
     //  notEmpty (Map) — Pass-through
     // ========================================================================
+
+    /**
+     * 断言 Map 不为空（无消息）
+     */
+    public static <K, V, T extends Map<K, V>> T notEmpty(T map) {
+        return notEmpty(map, "map must not be empty");
+    }
 
     /**
      * 断言 Map 不为 null 且不为空（Pass-through）
@@ -1066,10 +1420,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言 Map 不为空（无消息）
+     * 断言 Map 不为 null 且不为空（Pass-through + 占位符参数）
      */
-    public static <K, V, T extends Map<K, V>> T notEmpty(T map) {
-        return notEmpty(map, "map must not be empty");
+    public static <K, V, T extends Map<K, V>> T notEmpty(T map, String message, Object... args) {
+        if (map == null || map.isEmpty()) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return map;
     }
 
     /**
@@ -1078,6 +1435,16 @@ public final class BizAssert {
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, Supplier<String> messageSupplier) {
         if (map == null || map.isEmpty()) {
             throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return map;
+    }
+
+    /**
+     * 断言 Map 不为空（延迟构建消息 + 占位符参数）
+     */
+    public static <K, V, T extends Map<K, V>> T notEmpty(T map, Supplier<String> messageSupplier, Object... args) {
+        if (map == null || map.isEmpty()) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
         }
         return map;
     }
@@ -1093,6 +1460,16 @@ public final class BizAssert {
     }
 
     /**
+     * 断言 Map 不为空（带错误码 + 占位符参数）
+     */
+    public static <K, V, T extends Map<K, V>> T notEmpty(T map, int code, String message, Object... args) {
+        if (map == null || map.isEmpty()) {
+            throw newException(code, formatMessage(message, args));
+        }
+        return map;
+    }
+
+    /**
      * 断言 Map 不为空（错误枚举）
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, IErrorCode errorCode) {
@@ -1103,11 +1480,81 @@ public final class BizAssert {
     }
 
     /**
+     * 断言 Map 不为空（错误枚举 + 占位符参数）
+     */
+    public static <K, V, T extends Map<K, V>> T notEmpty(T map, IErrorCode errorCode, Object... args) {
+        if (map == null || map.isEmpty()) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+        return map;
+    }
+
+    /**
+     * 断言 Map 不为空（指定异常工厂 + 默认消息）
+     */
+    public static <K, V, T extends Map<K, V>> T notEmpty(T map, ExceptionFactory factory) {
+        if (map == null || map.isEmpty()) {
+            throw newException(ErrorCodes.UNSPECIFIED, "map must not be empty", factory);
+        }
+        return map;
+    }
+
+    /**
      * 断言 Map 不为空（指定异常工厂）
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, String message, ExceptionFactory factory) {
         if (map == null || map.isEmpty()) {
             throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return map;
+    }
+
+    /**
+     * 断言 Map 不为空（指定异常工厂）
+     */
+    public static <K, V, T extends Map<K, V>> T notEmpty(T map, String message, ExceptionFactory factory, Object... args) {
+        if (map == null || map.isEmpty()) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return map;
+    }
+
+    /**
+     * 断言 Map 不为空（指定异常工厂 + 错误码）
+     */
+    public static <K, V, T extends Map<K, V>> T notEmpty(T map, int code, String message, ExceptionFactory factory) {
+        if (map == null || map.isEmpty()) {
+            throw newException(code, message, factory);
+        }
+        return map;
+    }
+
+    /**
+     * 断言 Map 不为空（指定异常工厂 + 错误码 + 占位符参数）
+     */
+    public static <K, V, T extends Map<K, V>> T notEmpty(T map, int code, String message, ExceptionFactory factory, Object... args) {
+        if (map == null || map.isEmpty()) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return map;
+    }
+
+    /**
+     * 断言 Map 不为空（指定异常工厂 + 错误枚举）
+     */
+    public static <K, V, T extends Map<K, V>> T notEmpty(T map, IErrorCode errorCode, ExceptionFactory factory) {
+        if (map == null || map.isEmpty()) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return map;
+    }
+
+    /**
+     * 断言 Map 不为空（指定异常工厂 + 错误枚举 + 占位符参数）
+     */
+    public static <K, V, T extends Map<K, V>> T notEmpty(T map, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (map == null || map.isEmpty()) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
         }
         return map;
     }
@@ -1133,9 +1580,46 @@ public final class BizAssert {
         return map;
     }
 
+    /**
+     * 断言 Map 不为空（label 机制 + 错误码）
+     */
+    public static <K, V, T extends Map<K, V>> T notEmptyAs(T map, int code, String label) {
+        if (map == null || map.isEmpty()) {
+            throw newException(code, label + " must not be empty");
+        }
+        return map;
+    }
+
+    /**
+     * 断言 Map 不为空（label 机制 + 指定异常工厂）
+     */
+    public static <K, V, T extends Map<K, V>> T notEmptyAs(T map, String label, ExceptionFactory factory) {
+        if (map == null || map.isEmpty()) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be empty", factory);
+        }
+        return map;
+    }
+
+    /**
+     * 断言 Map 不为空（label 机制 + 错误码 + 指定异常工厂）
+     */
+    public static <K, V, T extends Map<K, V>> T notEmptyAs(T map, int code, String label, ExceptionFactory factory) {
+        if (map == null || map.isEmpty()) {
+            throw newException(code, label + " must not be empty", factory);
+        }
+        return map;
+    }
+
     // ========================================================================
     //  notEmpty (Array) — Pass-through
     // ========================================================================
+
+    /**
+     * 断言数组不为空（无消息）
+     */
+    public static <T> T[] notEmpty(T[] array) {
+        return notEmpty(array, "array must not be empty");
+    }
 
     /**
      * 断言数组不为 null 且不为空（Pass-through）
@@ -1148,10 +1632,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数组不为空（无消息）
+     * 断言数组不为 null 且不为空（Pass-through + 占位符参数）
      */
-    public static <T> T[] notEmpty(T[] array) {
-        return notEmpty(array, "array must not be empty");
+    public static <T> T[] notEmpty(T[] array, String message, Object... args) {
+        if (array == null || array.length == 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return array;
     }
 
     /**
@@ -1160,6 +1647,16 @@ public final class BizAssert {
     public static <T> T[] notEmpty(T[] array, Supplier<String> messageSupplier) {
         if (array == null || array.length == 0) {
             throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组不为空（延迟构建消息 + 占位符参数）
+     */
+    public static <T> T[] notEmpty(T[] array, Supplier<String> messageSupplier, Object... args) {
+        if (array == null || array.length == 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
         }
         return array;
     }
@@ -1175,6 +1672,16 @@ public final class BizAssert {
     }
 
     /**
+     * 断言数组不为空（带错误码 + 占位符参数）
+     */
+    public static <T> T[] notEmpty(T[] array, int code, String message, Object... args) {
+        if (array == null || array.length == 0) {
+            throw newException(code, formatMessage(message, args));
+        }
+        return array;
+    }
+
+    /**
      * 断言数组不为空（错误枚举）
      */
     public static <T> T[] notEmpty(T[] array, IErrorCode errorCode) {
@@ -1185,11 +1692,81 @@ public final class BizAssert {
     }
 
     /**
+     * 断言数组不为空（错误枚举 + 占位符参数）
+     */
+    public static <T> T[] notEmpty(T[] array, IErrorCode errorCode, Object... args) {
+        if (array == null || array.length == 0) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组不为空（指定异常工厂 + 默认消息）
+     */
+    public static <T> T[] notEmpty(T[] array, ExceptionFactory factory) {
+        if (array == null || array.length == 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, "array must not be empty", factory);
+        }
+        return array;
+    }
+
+    /**
      * 断言数组不为空（指定异常工厂）
      */
     public static <T> T[] notEmpty(T[] array, String message, ExceptionFactory factory) {
         if (array == null || array.length == 0) {
             throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组不为空（指定异常工厂 + 占位符参数）
+     */
+    public static <T> T[] notEmpty(T[] array, String message, ExceptionFactory factory, Object... args) {
+        if (array == null || array.length == 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组不为空（指定异常工厂 + 错误码）
+     */
+    public static <T> T[] notEmpty(T[] array, int code, String message, ExceptionFactory factory) {
+        if (array == null || array.length == 0) {
+            throw newException(code, message, factory);
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组不为空（指定异常工厂 + 错误码 + 占位符参数）
+     */
+    public static <T> T[] notEmpty(T[] array, int code, String message, ExceptionFactory factory, Object... args) {
+        if (array == null || array.length == 0) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组不为空（指定异常工厂 + 错误枚举）
+     */
+    public static <T> T[] notEmpty(T[] array, IErrorCode errorCode, ExceptionFactory factory) {
+        if (array == null || array.length == 0) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组不为空（指定异常工厂 + 错误枚举 + 占位符参数）
+     */
+    public static <T> T[] notEmpty(T[] array, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (array == null || array.length == 0) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
         }
         return array;
     }
@@ -1214,9 +1791,46 @@ public final class BizAssert {
         return array;
     }
 
+    /**
+     * 断言数组不为空（label 机制 + 错误码）
+     */
+    public static <T> T[] notEmptyAs(T[] array, int code, String label) {
+        if (array == null || array.length == 0) {
+            throw newException(code, label + " must not be empty");
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组不为空（label 机制 + 指定异常工厂）
+     */
+    public static <T> T[] notEmptyAs(T[] array, String label, ExceptionFactory factory) {
+        if (array == null || array.length == 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be empty", factory);
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组不为空（label 机制 + 错误码 + 指定异常工厂）
+     */
+    public static <T> T[] notEmptyAs(T[] array, int code, String label, ExceptionFactory factory) {
+        if (array == null || array.length == 0) {
+            throw newException(code, label + " must not be empty", factory);
+        }
+        return array;
+    }
+
     // ========================================================================
     //  notBlank (String) — Pass-through
     // ========================================================================
+
+    /**
+     * 断言字符串不为空白（无消息）
+     */
+    public static String notBlank(String text) {
+        return notBlank(text, "parameter must not be blank");
+    }
 
     /**
      * 断言字符串不为 null、不为空、不全为空白字符（Pass-through）
@@ -1230,11 +1844,15 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空白（无消息）
+     * 断言字符串不为空白（占位符消息）
      */
-    public static String notBlank(String text) {
-        return notBlank(text, "parameter must not be blank");
+    public static String notBlank(String text, String message, Object... args) {
+        if (isBlank(text)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return text;
     }
+
 
     /**
      * 断言字符串不为空白（延迟构建消息）
@@ -1242,6 +1860,16 @@ public final class BizAssert {
     public static String notBlank(String text, Supplier<String> messageSupplier) {
         if (isBlank(text)) {
             throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不为空白（延迟构建消息 + 占位符参数）
+     */
+    public static String notBlank(String text, Supplier<String> messageSupplier, Object... args) {
+        if (isBlank(text)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
         }
         return text;
     }
@@ -1257,11 +1885,11 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空白（占位符消息）
+     * 断言字符串不为空白（带错误码 + 占位符参数）
      */
-    public static String notBlank(String text, String message, Object... args) {
+    public static String notBlank(String text, int code, String message, Object... args) {
         if (isBlank(text)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(code, formatMessage(message, args));
         }
         return text;
     }
@@ -1287,11 +1915,71 @@ public final class BizAssert {
     }
 
     /**
+     * 断言字符串不为空白（指定异常工厂 + 默认消息）
+     */
+    public static String notBlank(String text, ExceptionFactory factory) {
+        if (isBlank(text)) {
+            throw newException(ErrorCodes.UNSPECIFIED, "parameter must not be blank", factory);
+        }
+        return text;
+    }
+
+    /**
      * 断言字符串不为空白（指定异常工厂）
      */
     public static String notBlank(String text, String message, ExceptionFactory factory) {
         if (isBlank(text)) {
             throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不为空白（指定异常工厂+ 占位符参数）
+     */
+    public static String notBlank(String text, String message, ExceptionFactory factory, Object... args) {
+        if (isBlank(text)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不为空白（指定异常工厂 + 错误码）
+     */
+    public static String notBlank(String text, int code, String message, ExceptionFactory factory) {
+        if (isBlank(text)) {
+            throw newException(code, message, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不为空白（指定异常工厂 + 错误码 + 占位符参数）
+     */
+    public static String notBlank(String text, int code, String message, ExceptionFactory factory, Object... args) {
+        if (isBlank(text)) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不为空白（指定异常工厂 + 错误枚举）
+     */
+    public static String notBlank(String text, IErrorCode errorCode, ExceptionFactory factory) {
+        if (isBlank(text)) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不为空白（指定异常工厂 + 错误枚举 + 占位符参数）
+     */
+    public static String notBlank(String text, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (isBlank(text)) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
         }
         return text;
     }
@@ -1316,9 +2004,48 @@ public final class BizAssert {
         return text;
     }
 
+    /**
+     * 断言字符串不为空白（label 机制 + 错误码）
+     */
+    public static String notBlankAs(String text, int code, String label) {
+        if (isBlank(text)) {
+            throw newException(code, label + " must not be blank");
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不为空白（label 机制 + 指定异常工厂）
+     */
+    public static String notBlankAs(String text, String label, ExceptionFactory factory) {
+        if (isBlank(text)) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be blank", factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不为空白（label 机制 + 错误码 + 指定异常工厂）
+     */
+    public static String notBlankAs(String text, int code, String label, ExceptionFactory factory) {
+        if (isBlank(text)) {
+            throw newException(code, label + " must not be blank", factory);
+        }
+        return text;
+    }
+
     // ========================================================================
     //  isEqual / notEqual
     // ========================================================================
+
+    /**
+     * 断言两个对象相等（无消息）
+     */
+    public static void isEqual(Object actual, Object expected) {
+        if (!Objects.equals(actual, expected)) {
+            throw newException(ErrorCodes.UNSPECIFIED, "actual must be equal to expected");
+        }
+    }
 
     /**
      * 断言两个对象相等（使用 Objects.equals）
@@ -1335,6 +2062,42 @@ public final class BizAssert {
     public static void isEqual(Object actual, Object expected, String message, Object... args) {
         if (!Objects.equals(actual, expected)) {
             throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+    }
+
+    /**
+     * 断言两个对象相等（延迟构建消息）
+     */
+    public static void isEqual(Object actual, Object expected, Supplier<String> messageSupplier) {
+        if (!Objects.equals(actual, expected)) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+    }
+
+    /**
+     * 断言两个对象相等（延迟构建消息 + 占位符参数）
+     */
+    public static void isEqual(Object actual, Object expected, Supplier<String> messageSupplier, Object... args) {
+        if (!Objects.equals(actual, expected)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+    }
+
+    /**
+     * 断言两个对象相等（带错误码）
+     */
+    public static void isEqual(Object actual, Object expected, int code, String message) {
+        if (!Objects.equals(actual, expected)) {
+            throw newException(code, message);
+        }
+    }
+
+    /**
+     * 断言两个对象相等（带错误码 + 占位符参数）
+     */
+    public static void isEqual(Object actual, Object expected, int code, String message, Object... args) {
+        if (!Objects.equals(actual, expected)) {
+            throw newException(code, formatMessage(message, args));
         }
     }
 
@@ -1357,11 +2120,122 @@ public final class BizAssert {
     }
 
     /**
+     * 断言两个对象相等（指定异常工厂 + 默认消息）
+     */
+    public static void isEqual(Object actual, Object expected, ExceptionFactory factory) {
+        if (!Objects.equals(actual, expected)) {
+            throw newException(ErrorCodes.UNSPECIFIED, "actual must be equal to expected", factory);
+        }
+    }
+
+    /**
      * 断言两个对象相等（指定异常工厂）
      */
     public static void isEqual(Object actual, Object expected, String message, ExceptionFactory factory) {
         if (!Objects.equals(actual, expected)) {
             throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+    }
+
+    /**
+     * 断言两个对象相等（指定异常工厂 + 占位符参数）
+     */
+    public static void isEqual(Object actual, Object expected, String message, ExceptionFactory factory, Object... args) {
+        if (!Objects.equals(actual, expected)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+    }
+
+    /**
+     * 断言两个对象相等（指定异常工厂 + 错误码）
+     */
+    public static void isEqual(Object actual, Object expected, int code, String message, ExceptionFactory factory) {
+        if (!Objects.equals(actual, expected)) {
+            throw newException(code, message, factory);
+        }
+    }
+
+    /**
+     * 断言两个对象相等（指定异常工厂 + 错误码 + 占位符参数）
+     */
+    public static void isEqual(Object actual, Object expected, int code, String message, ExceptionFactory factory, Object... args) {
+        if (!Objects.equals(actual, expected)) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+    }
+
+    /**
+     * 断言两个对象相等（指定异常工厂 + 错误枚举）
+     */
+    public static void isEqual(Object actual, Object expected, IErrorCode errorCode, ExceptionFactory factory) {
+        if (!Objects.equals(actual, expected)) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+    }
+
+    /**
+     * 断言两个对象相等（指定异常工厂 + 错误枚举 + 占位符参数）
+     */
+    public static void isEqual(Object actual, Object expected, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (!Objects.equals(actual, expected)) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+    }
+
+    /**
+     * 断言两个对象相等（直接传入异常实例）
+     */
+    public static void isEqualOrThrow(Object actual, Object expected, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (!Objects.equals(actual, expected)) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+    }
+
+    /**
+     * 断言两个对象相等（label 机制）
+     */
+    public static void isEqualAs(Object actual, Object expected, String actualLabel, String expectedLabel) {
+        if (!Objects.equals(actual, expected)) {
+            throw newException(ErrorCodes.UNSPECIFIED, actualLabel + " must be equal to " + expectedLabel);
+        }
+    }
+
+    /**
+     * 断言两个对象相等（label 机制 + 带错误码）
+     */
+    public static void isEqualAs(Object actual, Object expected, int code, String actualLabel, String expectedLabel) {
+        if (!Objects.equals(actual, expected)) {
+            throw newException(code, actualLabel + " must be equal to " + expectedLabel);
+
+        }
+    }
+
+    /**
+     * 断言两个对象相等（label 机制 + 指定异常工厂）
+     */
+    public static void isEqualAs(Object actual, Object expected, String actualLabel, String expectedLabel, ExceptionFactory factory) {
+        if (!Objects.equals(actual, expected)) {
+            throw newException(ErrorCodes.UNSPECIFIED, actualLabel + " must be equal to " + expectedLabel, factory);
+        }
+    }
+
+    /**
+     * 断言两个对象相等（label 机制 + 错误码 + 指定异常工厂）
+     */
+    public static void isEqualAs(Object actual, Object expected, int code, String actualLabel, String expectedLabel, ExceptionFactory factory) {
+        if (!Objects.equals(actual, expected)) {
+            throw newException(code, actualLabel + " must be equal to " + expectedLabel, factory);
+        }
+    }
+
+
+
+    /**
+     * 断言两个对象不相等（无消息）
+     */
+    public static void notEqual(Object actual, Object unexpected) {
+        if (Objects.equals(actual, unexpected)) {
+            throw newException(ErrorCodes.UNSPECIFIED, "actual must not be equal to unexpected");
         }
     }
 
@@ -1384,6 +2258,42 @@ public final class BizAssert {
     }
 
     /**
+     * 断言两个对象不相等（延迟构建消息）
+     */
+    public static void notEqual(Object actual, Object unexpected, Supplier<String> messageSupplier) {
+        if (Objects.equals(actual, unexpected)) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+    }
+
+    /**
+     * 断言两个对象不相等（延迟构建消息 + 占位符消息）
+     */
+    public static void notEqual(Object actual, Object unexpected, Supplier<String> messageSupplier, Object... args) {
+        if (Objects.equals(actual, unexpected)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+    }
+
+    /**
+     * 断言两个对象不相等（带错误码）
+     */
+    public static void notEqual(Object actual, Object unexpected, int code, String message) {
+        if (Objects.equals(actual, unexpected)) {
+            throw newException(code, message);
+        }
+    }
+
+    /**
+     * 断言两个对象不相等（带错误码 + 占位符参数）
+     */
+    public static void notEqual(Object actual, Object unexpected, int code, String message, Object... args) {
+        if (Objects.equals(actual, unexpected)) {
+            throw newException(code, formatMessage(message, args));
+        }
+    }
+
+    /**
      * 断言两个对象不相等（错误枚举）
      */
     public static void notEqual(Object actual, Object unexpected, IErrorCode errorCode) {
@@ -1393,11 +2303,119 @@ public final class BizAssert {
     }
 
     /**
+     * 断言两个对象不相等（错误枚举）
+     */
+    public static void notEqual(Object actual, Object unexpected, IErrorCode errorCode, Object... args) {
+        if (Objects.equals(actual, unexpected)) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+    }
+
+    /**
+     * 断言两个对象不相等（指定异常工厂 + 默认消息）
+     */
+    public static void notEqual(Object actual, Object unexpected, ExceptionFactory factory) {
+        if (Objects.equals(actual, unexpected)) {
+            throw newException(ErrorCodes.UNSPECIFIED, "actual must not be equal to unexpected", factory);
+        }
+    }
+
+    /**
      * 断言两个对象不相等（指定异常工厂）
      */
     public static void notEqual(Object actual, Object unexpected, String message, ExceptionFactory factory) {
         if (Objects.equals(actual, unexpected)) {
             throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+    }
+
+    /**
+     * 断言两个对象不相等（指定异常工厂 + 占位符参数）
+     */
+    public static void notEqual(Object actual, Object unexpected, String message, ExceptionFactory factory, Object... args) {
+        if (Objects.equals(actual, unexpected)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+    }
+
+    /**
+     * 断言两个对象不相等（指定异常工厂 + 错误码）
+     */
+    public static void notEqual(Object actual, Object unexpected, int code, String message, ExceptionFactory factory) {
+        if (Objects.equals(actual, unexpected)) {
+            throw newException(code, message, factory);
+        }
+    }
+
+    /**
+     * 断言两个对象不相等（指定异常工厂 + 错误码 + 占位符参数）
+     */
+    public static void notEqual(Object actual, Object unexpected, int code, String message, ExceptionFactory factory, Object... args) {
+        if (Objects.equals(actual, unexpected)) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+    }
+
+    /**
+     * 断言两个对象不相等（指定异常工厂 + 错误枚举）
+     */
+    public static void notEqual(Object actual, Object unexpected, IErrorCode errorCode, ExceptionFactory factory) {
+        if (Objects.equals(actual, unexpected)) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+    }
+
+    /**
+     * 断言两个对象不相等（指定异常工厂 + 错误枚举 + 占位符参数）
+     */
+    public static void notEqual(Object actual, Object unexpected, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (Objects.equals(actual, unexpected)) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+    }
+
+    /**
+     * 断言两个对象不相等（直接传入异常实例）
+     */
+    public static void notEqualOrThrow(Object actual, Object unexpected, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (Objects.equals(actual, unexpected)) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+    }
+
+    /**
+     * 断言两个对象不相等（label 机制）
+     */
+    public static void notEqualAs(Object actual, Object unexpected, String actualLabel, String unexpectedLabel) {
+        if (Objects.equals(actual, unexpected)) {
+            throw newException(ErrorCodes.UNSPECIFIED, actualLabel + " must not be equal to " + unexpectedLabel);
+        }
+    }
+
+    /**
+     * 断言两个对象不相等（label 机制 + 带错误码）
+     */
+    public static void notEqualAs(Object actual, Object unexpected, int code, String actualLabel, String unexpectedLabel) {
+        if (Objects.equals(actual, unexpected)) {
+            throw newException(code, actualLabel + " must not be equal to " + unexpectedLabel);
+        }
+    }
+
+    /**
+     * 断言两个对象不相等（label 机制 + 指定异常工厂）
+     */
+    public static void notEqualAs(Object actual, Object unexpected, String actualLabel, String unexpectedLabel, ExceptionFactory factory) {
+        if (Objects.equals(actual, unexpected)) {
+            throw newException(ErrorCodes.UNSPECIFIED, actualLabel + " must not be equal to " + unexpectedLabel, factory);
+        }
+    }
+
+    /**
+     * 断言两个对象不相等（label 机制 + 错误码 + 指定异常工厂）
+     */
+    public static void notEqualAs(Object actual, Object unexpected, int code, String actualLabel, String unexpectedLabel, ExceptionFactory factory) {
+        if (Objects.equals(actual, unexpected)) {
+            throw newException(code, actualLabel + " must not be equal to " + unexpectedLabel, factory);
         }
     }
 
