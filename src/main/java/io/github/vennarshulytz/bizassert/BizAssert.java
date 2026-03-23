@@ -2423,6 +2423,10 @@ public final class BizAssert {
     //  数值断言 — Pass-through
     // ========================================================================
 
+    public static int isPositive(int value) {
+        return isPositive(value, "value must be positive");
+    }
+
     /**
      * 断言数值为正数（> 0）
      *
@@ -2437,15 +2441,211 @@ public final class BizAssert {
         return value;
     }
 
-    public static int isPositive(int value) {
-        return isPositive(value, "value must be positive");
+    /**
+     * 断言数值为正数（> 0）（占位符消息）
+     */
+    public static int isPositive(int value, String message, Object... args) {
+        if (value <= 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return value;
     }
 
+    /**
+     * 断言数值为正数（> 0）（延迟构建消息）
+     */
+    public static int isPositive(int value, Supplier<String> messageSupplier) {
+        if (value <= 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（延迟构建消息 + 占位符消息）
+     */
+    public static int isPositive(int value, Supplier<String> messageSupplier, Object... args) {
+        if (value <= 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（带错误码）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息
+     * @return 原数值
+     */
+    public static int isPositive(int value, int code, String message) {
+        if (value <= 0) {
+            throw newException(code, message);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（带错误码 + 占位符消息）
+     */
+    public static int isPositive(int value, int code, String message, Object... args) {
+        if (value <= 0) {
+            throw newException(code, formatMessage(message, args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（错误枚举）
+     */
     public static int isPositive(int value, IErrorCode errorCode) {
         if (value <= 0) {
             throw newException(errorCode.getCode(), errorCode.getMessage());
         }
         return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（错误枚举 + 占位符参数）
+     */
+    public static int isPositive(int value, IErrorCode errorCode, Object... args) {
+        if (value <= 0) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 默认消息）
+     */
+    public static int isPositive(int value, ExceptionFactory factory) {
+        if (value <= 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, "value must be positive", factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息
+     * @return 原数值
+     */
+    public static int isPositive(int value, String message, ExceptionFactory factory) {
+        if (value <= 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 占位符参数）
+     */
+    public static int isPositive(int value, String message, ExceptionFactory factory, Object... args) {
+        if (value <= 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 带错误码）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息
+     * @return 原数值
+     */
+    public static int isPositive(int value, int code, String message, ExceptionFactory factory) {
+        if (value <= 0) {
+            throw newException(code, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 带错误码 + 占位符消息）
+     */
+    public static int isPositive(int value, int code, String message, ExceptionFactory factory, Object... args) {
+        if (value <= 0) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 错误枚举）
+     */
+    public static int isPositive(int value, IErrorCode errorCode, ExceptionFactory factory) {
+        if (value <= 0) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 错误枚举 + 占位符参数）
+     */
+    public static int isPositive(int value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (value <= 0) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指直接传入异常实例）
+     */
+    public static int isPositiveOrThrow(int value, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (value <= 0) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（label 机制）
+     */
+    public static int isPositiveAs(int value, String label) {
+        if (value <= 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be positive");
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（带错误码）
+     */
+    public static int isPositiveAs(int value, int code, String label) {
+        if (value <= 0) {
+            throw newException(code, label + " must be positive");
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（label 机制 + 指定异常工厂）
+     */
+    public static int isPositiveAs(int value, String label, ExceptionFactory factory) {
+        if (value <= 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be positive", factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（label 机制 + 错误码 + 指定异常工厂）
+     */
+    public static int isPositiveAs(int value, int code, String label, ExceptionFactory factory) {
+        if (value <= 0) {
+            throw newException(code, label + " must be positive", factory);
+        }
+        return value;
+    }
+
+    public static long isPositive(long value) {
+        return isPositive(value, "value must be positive");
     }
 
     public static long isPositive(long value, String message) {
@@ -2455,8 +2655,55 @@ public final class BizAssert {
         return value;
     }
 
-    public static long isPositive(long value) {
-        return isPositive(value, "value must be positive");
+    public static long isPositive(long value, String message, Object... args) {
+        if (value <= 0L) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（延迟构建消息）
+     */
+    public static long isPositive(long value, Supplier<String> messageSupplier) {
+        if (value <= 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（延迟构建消息 + 占位符消息）
+     */
+    public static long isPositive(long value, Supplier<String> messageSupplier, Object... args) {
+        if (value <= 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（带错误码）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息
+     * @return 原数值
+     */
+    public static long isPositive(long value, int code, String message) {
+        if (value <= 0) {
+            throw newException(code, message);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（带错误码 + 占位符消息）
+     */
+    public static long isPositive(long value, int code, String message, Object... args) {
+        if (value <= 0) {
+            throw newException(code, formatMessage(message, args));
+        }
+        return value;
     }
 
     public static long isPositive(long value, IErrorCode errorCode) {
@@ -2466,15 +2713,102 @@ public final class BizAssert {
         return value;
     }
 
-    /**
-     * 断言数值为正数（> 0）— label 机制
-     */
-    public static int isPositiveAs(int value, String label) {
-        if (value <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be positive");
+    public static long isPositive(long value, IErrorCode errorCode, Object... args) {
+        if (value <= 0L) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
         }
         return value;
     }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 默认消息）
+     */
+    public static long isPositive(long value, ExceptionFactory factory) {
+        if (value <= 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, "value must be positive", factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息
+     * @return 原数值
+     */
+    public static long isPositive(long value, String message, ExceptionFactory factory) {
+        if (value <= 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 占位符参数）
+     */
+    public static long isPositive(long value, String message, ExceptionFactory factory, Object... args) {
+        if (value <= 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 带错误码）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息
+     * @return 原数值
+     */
+    public static long isPositive(long value, int code, String message, ExceptionFactory factory) {
+        if (value <= 0) {
+            throw newException(code, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 带错误码 + 占位符消息）
+     */
+    public static long isPositive(long value, int code, String message, ExceptionFactory factory, Object... args) {
+        if (value <= 0) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 错误枚举）
+     */
+    public static long isPositive(long value, IErrorCode errorCode, ExceptionFactory factory) {
+        if (value <= 0) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 错误枚举 + 占位符参数）
+     */
+    public static long isPositive(long value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (value <= 0) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指直接传入异常实例）
+     */
+    public static long isPositiveOrThrow(long value, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (value <= 0) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return value;
+    }
+
 
     public static long isPositiveAs(long value, String label) {
         if (value <= 0L) {
@@ -2482,6 +2816,240 @@ public final class BizAssert {
         }
         return value;
     }
+
+    /**
+     * 断言数值为正数（> 0）（带错误码）
+     */
+    public static long isPositiveAs(long value, int code, String label) {
+        if (value <= 0) {
+            throw newException(code, label + " must be positive");
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（label 机制 + 指定异常工厂）
+     */
+    public static long isPositiveAs(long value, String label, ExceptionFactory factory) {
+        if (value <= 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be positive", factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（label 机制 + 错误码 + 指定异常工厂）
+     */
+    public static long isPositiveAs(long value, int code, String label, ExceptionFactory factory) {
+        if (value <= 0) {
+            throw newException(code, label + " must be positive", factory);
+        }
+        return value;
+    }
+
+    public static <T extends Number> T isPositive(T value) {
+        return isPositive(value, "value must be positive");
+    }
+
+    public static <T extends Number> T isPositive(T value, String message) {
+        if (value == null || value.doubleValue() <= 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, message);
+        }
+        return value;
+    }
+
+    public static <T extends Number> T isPositive(T value, String message, Object... args) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（延迟构建消息）
+     */
+    public static <T extends Number> T isPositive(T value, Supplier<String> messageSupplier) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（延迟构建消息 + 占位符消息）
+     */
+    public static <T extends Number> T isPositive(T value, Supplier<String> messageSupplier, Object... args) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（带错误码）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息
+     * @return 原数值
+     */
+    public static <T extends Number> T isPositive(T value, int code, String message) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(code, message);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（带错误码 + 占位符消息）
+     */
+    public static <T extends Number> T isPositive(T value, int code, String message, Object... args) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(code, formatMessage(message, args));
+        }
+        return value;
+    }
+
+    public static <T extends Number> T isPositive(T value, IErrorCode errorCode) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(errorCode.getCode(), errorCode.getMessage());
+        }
+        return value;
+    }
+
+    public static <T extends Number> T isPositive(T value, IErrorCode errorCode, Object... args) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 默认消息）
+     */
+    public static <T extends Number> T isPositive(T value, ExceptionFactory factory) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(ErrorCodes.UNSPECIFIED, "value must be positive", factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息
+     * @return 原数值
+     */
+    public static <T extends Number> T isPositive(T value, String message, ExceptionFactory factory) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 占位符参数）
+     */
+    public static <T extends Number> T isPositive(T value, String message, ExceptionFactory factory, Object... args) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 带错误码）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息
+     * @return 原数值
+     */
+    public static <T extends Number> T isPositive(T value, int code, String message, ExceptionFactory factory) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(code, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 带错误码 + 占位符消息）
+     */
+    public static <T extends Number> T isPositive(T value, int code, String message, ExceptionFactory factory, Object... args) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 错误枚举）
+     */
+    public static <T extends Number> T isPositive(T value, IErrorCode errorCode, ExceptionFactory factory) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指定异常工厂 + 错误枚举 + 占位符参数）
+     */
+    public static <T extends Number> T isPositive(T value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（指直接传入异常实例）
+     */
+    public static <T extends Number> T isPositiveOrThrow(T value, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return value;
+    }
+
+
+    public static <T extends Number> T isPositiveAs(T value, String label) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be positive");
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（带错误码）
+     */
+    public static <T extends Number> T isPositiveAs(T value, int code, String label) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(code, label + " must be positive");
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（label 机制 + 指定异常工厂）
+     */
+    public static <T extends Number> T isPositiveAs(T value, String label, ExceptionFactory factory) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be positive", factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为正数（> 0）（label 机制 + 错误码 + 指定异常工厂）
+     */
+    public static <T extends Number> T isPositiveAs(T value, int code, String label, ExceptionFactory factory) {
+        if (value == null || value.doubleValue() <= 0L) {
+            throw newException(code, label + " must be positive", factory);
+        }
+        return value;
+    }
+
 
     /**
      * 断言数值为非负数（>= 0）
