@@ -3050,9 +3050,26 @@ public final class BizAssert {
         return value;
     }
 
+    // ===================== isNonNegative(int) =====================
 
     /**
      * 断言数值为非负数（>= 0）
+     *
+     * @param value 待校验数值
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegative(int value) {
+        return isNonNegative(value, "value must be non-negative");
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
      */
     public static int isNonNegative(int value, String message) {
         if (value < 0) {
@@ -3061,10 +3078,94 @@ public final class BizAssert {
         return value;
     }
 
-    public static int isNonNegative(int value) {
-        return isNonNegative(value, "value must be non-negative");
+    /**
+     * 断言数值为非负数（>= 0）（占位符消息）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息模板（支持占位符）
+     * @param args    占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegative(int value, String message, Object... args) {
+        if (value < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return value;
     }
 
+    /**
+     * 断言数值为非负数（>= 0）（延迟构建消息）
+     *
+     * @param value           待校验数值
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegative(int value, Supplier<String> messageSupplier) {
+        if (value < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（延迟构建消息 + 占位符消息）
+     *
+     * @param value           待校验数值
+     * @param messageSupplier 错误消息模板提供者（支持占位符，仅在断言失败时调用）
+     * @param args            占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegative(int value, Supplier<String> messageSupplier, Object... args) {
+        if (value < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（带错误码）
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegative(int value, int code, String message) {
+        if (value < 0) {
+            throw newException(code, message);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（带错误码 + 占位符消息）
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息模板（支持占位符）
+     * @param args    占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegative(int value, int code, String message, Object... args) {
+        if (value < 0) {
+            throw newException(code, formatMessage(message, args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（错误枚举）
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
     public static int isNonNegative(int value, IErrorCode errorCode) {
         if (value < 0) {
             throw newException(errorCode.getCode(), errorCode.getMessage());
@@ -3072,26 +3173,160 @@ public final class BizAssert {
         return value;
     }
 
-    public static long isNonNegative(long value, String message) {
-        if (value < 0L) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
-        }
-        return value;
-    }
-
-    public static long isNonNegative(long value) {
-        return isNonNegative(value, "value must be non-negative");
-    }
-
-    public static long isNonNegative(long value, IErrorCode errorCode) {
-        if (value < 0L) {
-            throw newException(errorCode.getCode(), errorCode.getMessage());
+    /**
+     * 断言数值为非负数（>= 0）（错误枚举 + 占位符参数）
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，包含错误码与错误消息模板
+     * @param args      占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegative(int value, IErrorCode errorCode, Object... args) {
+        if (value < 0) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
         }
         return value;
     }
 
     /**
-     * 断言数值为非负数（>= 0）— label 机制
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 默认消息）
+     *
+     * @param value   待校验数值
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegative(int value, ExceptionFactory factory) {
+        if (value < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, "value must be non-negative", factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegative(int value, String message, ExceptionFactory factory) {
+        if (value < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 占位符参数）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息模板（支持占位符）
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegative(int value, String message, ExceptionFactory factory, Object... args) {
+        if (value < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 带错误码）
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegative(int value, int code, String message, ExceptionFactory factory) {
+        if (value < 0) {
+            throw newException(code, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 带错误码 + 占位符消息）
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息模板（支持占位符）
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegative(int value, int code, String message, ExceptionFactory factory, Object... args) {
+        if (value < 0) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 错误枚举）
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegative(int value, IErrorCode errorCode, ExceptionFactory factory) {
+        if (value < 0) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 错误枚举 + 占位符参数）
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，包含错误码与错误消息模板
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegative(int value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (value < 0) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（直接传入异常实例）
+     *
+     * @param value             待校验数值
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0，抛出由 exceptionSupplier 提供的异常
+     */
+    public static int isNonNegativeOrThrow(int value, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (value < 0) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（label 机制）
+     *
+     * @param value 待校验数值
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
      */
     public static int isNonNegativeAs(int value, String label) {
         if (value < 0) {
@@ -3100,9 +3335,744 @@ public final class BizAssert {
         return value;
     }
 
+    /**
+     * 断言数值为非负数（>= 0）（label 机制 + 带错误码）
+     *
+     * @param value 待校验数值
+     * @param code  错误码
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegativeAs(int value, int code, String label) {
+        if (value < 0) {
+            throw newException(code, label + " must be non-negative");
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（label 机制 + 指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegativeAs(int value, String label, ExceptionFactory factory) {
+        if (value < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be non-negative", factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（label 机制 + 错误码 + 指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static int isNonNegativeAs(int value, int code, String label, ExceptionFactory factory) {
+        if (value < 0) {
+            throw newException(code, label + " must be non-negative", factory);
+        }
+        return value;
+    }
+
+
+// ===================== isNonNegative(long) =====================
+
+    /**
+     * 断言数值为非负数（>= 0）
+     *
+     * @param value 待校验数值
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegative(long value) {
+        return isNonNegative(value, "value must be non-negative");
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegative(long value, String message) {
+        if (value < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, message);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（占位符消息）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息模板（支持占位符）
+     * @param args    占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegative(long value, String message, Object... args) {
+        if (value < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（延迟构建消息）
+     *
+     * @param value           待校验数值
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegative(long value, Supplier<String> messageSupplier) {
+        if (value < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（延迟构建消息 + 占位符消息）
+     *
+     * @param value           待校验数值
+     * @param messageSupplier 错误消息模板提供者（支持占位符，仅在断言失败时调用）
+     * @param args            占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegative(long value, Supplier<String> messageSupplier, Object... args) {
+        if (value < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（带错误码）
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegative(long value, int code, String message) {
+        if (value < 0) {
+            throw newException(code, message);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（带错误码 + 占位符消息）
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息模板（支持占位符）
+     * @param args    占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegative(long value, int code, String message, Object... args) {
+        if (value < 0) {
+            throw newException(code, formatMessage(message, args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（错误枚举）
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegative(long value, IErrorCode errorCode) {
+        if (value < 0) {
+            throw newException(errorCode.getCode(), errorCode.getMessage());
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（错误枚举 + 占位符参数）
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，包含错误码与错误消息模板
+     * @param args      占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegative(long value, IErrorCode errorCode, Object... args) {
+        if (value < 0) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 默认消息）
+     *
+     * @param value   待校验数值
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegative(long value, ExceptionFactory factory) {
+        if (value < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, "value must be non-negative", factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegative(long value, String message, ExceptionFactory factory) {
+        if (value < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 占位符参数）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息模板（支持占位符）
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegative(long value, String message, ExceptionFactory factory, Object... args) {
+        if (value < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 带错误码）
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegative(long value, int code, String message, ExceptionFactory factory) {
+        if (value < 0) {
+            throw newException(code, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 带错误码 + 占位符消息）
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息模板（支持占位符）
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegative(long value, int code, String message, ExceptionFactory factory, Object... args) {
+        if (value < 0) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 错误枚举）
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegative(long value, IErrorCode errorCode, ExceptionFactory factory) {
+        if (value < 0) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 错误枚举 + 占位符参数）
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，包含错误码与错误消息模板
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegative(long value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (value < 0) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（直接传入异常实例）
+     *
+     * @param value             待校验数值
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0，抛出由 exceptionSupplier 提供的异常
+     */
+    public static long isNonNegativeOrThrow(long value, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (value < 0) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（label 机制）
+     *
+     * @param value 待校验数值
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
     public static long isNonNegativeAs(long value, String label) {
-        if (value < 0L) {
+        if (value < 0) {
             throw newException(ErrorCodes.UNSPECIFIED, label + " must be non-negative");
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（label 机制 + 带错误码）
+     *
+     * @param value 待校验数值
+     * @param code  错误码
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegativeAs(long value, int code, String label) {
+        if (value < 0) {
+            throw newException(code, label + " must be non-negative");
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（label 机制 + 指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegativeAs(long value, String label, ExceptionFactory factory) {
+        if (value < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be non-negative", factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（label 机制 + 错误码 + 指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static long isNonNegativeAs(long value, int code, String label, ExceptionFactory factory) {
+        if (value < 0) {
+            throw newException(code, label + " must be non-negative", factory);
+        }
+        return value;
+    }
+
+
+// ===================== isNonNegative(<T extends Number>) =====================
+
+    /**
+     * 断言数值为非负数（>= 0）
+     * <p>支持所有 {@link Number} 子类（如 {@link Integer}、{@link Long}、
+     * {@link Double}、{@link java.math.BigDecimal} 等），通过 {@code doubleValue()} 进行比较。</p>
+     *
+     * @param value 待校验数值
+     * @param <T>   数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegative(T value) {
+        return isNonNegative(value, "value must be non-negative");
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegative(T value, String message) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, message);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（占位符消息）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息模板（支持占位符）
+     * @param args    占位符参数
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegative(T value, String message, Object... args) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（延迟构建消息）
+     *
+     * @param value           待校验数值
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @param <T>             数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegative(T value, Supplier<String> messageSupplier) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（延迟构建消息 + 占位符消息）
+     *
+     * @param value           待校验数值
+     * @param messageSupplier 错误消息模板提供者（支持占位符，仅在断言失败时调用）
+     * @param args            占位符参数
+     * @param <T>             数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegative(T value, Supplier<String> messageSupplier, Object... args) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（带错误码）
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegative(T value, int code, String message) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(code, message);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（带错误码 + 占位符消息）
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息模板（支持占位符）
+     * @param args    占位符参数
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegative(T value, int code, String message, Object... args) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(code, formatMessage(message, args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（错误枚举）
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param <T>       数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegative(T value, IErrorCode errorCode) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(errorCode.getCode(), errorCode.getMessage());
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（错误枚举 + 占位符参数）
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，包含错误码与错误消息模板
+     * @param args      占位符参数
+     * @param <T>       数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegative(T value, IErrorCode errorCode, Object... args) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 默认消息）
+     *
+     * @param value   待校验数值
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegative(T value, ExceptionFactory factory) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, "value must be non-negative", factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegative(T value, String message, ExceptionFactory factory) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 占位符参数）
+     *
+     * @param value   待校验数值
+     * @param message 错误消息模板（支持占位符）
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegative(T value, String message, ExceptionFactory factory, Object... args) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 带错误码）
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegative(T value, int code, String message, ExceptionFactory factory) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(code, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 带错误码 + 占位符消息）
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息模板（支持占位符）
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegative(T value, int code, String message, ExceptionFactory factory, Object... args) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 错误枚举）
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param <T>       数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegative(T value, IErrorCode errorCode, ExceptionFactory factory) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（指定异常工厂 + 错误枚举 + 占位符参数）
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，包含错误码与错误消息模板
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @param <T>       数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegative(T value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（直接传入异常实例）
+     *
+     * @param value             待校验数值
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @param <T>               数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0，抛出由 exceptionSupplier 提供的异常
+     */
+    public static <T extends Number> T isNonNegativeOrThrow(T value, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (value == null || value.doubleValue() < 0) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（label 机制）
+     *
+     * @param value 待校验数值
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @param <T>   数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegativeAs(T value, String label) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be non-negative");
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（label 机制 + 带错误码）
+     *
+     * @param value 待校验数值
+     * @param code  错误码
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @param <T>   数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegativeAs(T value, int code, String label) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(code, label + " must be non-negative");
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（label 机制 + 指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegativeAs(T value, String label, ExceptionFactory factory) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be non-negative", factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值为非负数（>= 0）（label 机制 + 错误码 + 指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值 < 0
+     */
+    public static <T extends Number> T isNonNegativeAs(T value, int code, String label, ExceptionFactory factory) {
+        if (value == null || value.doubleValue() < 0) {
+            throw newException(code, label + " must be non-negative", factory);
         }
         return value;
     }
