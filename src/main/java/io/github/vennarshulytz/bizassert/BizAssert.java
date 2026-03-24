@@ -5167,14 +5167,25 @@ public final class BizAssert {
         return value;
     }
 
-    // ========================================================================
-    //  字符串模式匹配 — Pass-through
-    // ========================================================================
+    // ============================================================
+    // matches：断言字符串匹配正则表达式
+    // ============================================================
+
+    /**
+     * 断言字符串匹配正则表达式（默认消息）
+     *
+     * @param text  待校验字符串
+     * @param regex 正则表达式
+     * @return 原字符串
+     */
+    public static String matches(String text, String regex) {
+        return matches(text, regex, "text must match regex: " + regex);
+    }
 
     /**
      * 断言字符串匹配正则表达式
      *
-     * @param text    待校验字符串（不能为 null）
+     * @param text    待校验字符串
      * @param regex   正则表达式
      * @param message 错误消息
      * @return 原字符串
@@ -5188,7 +5199,97 @@ public final class BizAssert {
     }
 
     /**
+     * 断言字符串匹配正则表达式（占位符消息）
+     *
+     * @param text    待校验字符串
+     * @param regex   正则表达式
+     * @param message 错误消息模板（支持占位符）
+     * @param args    占位符参数
+     * @return 原字符串
+     */
+    public static String matches(String text, String regex, String message, Object... args) {
+        notNull(text, message, args);
+        if (!text.matches(regex)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串匹配正则表达式（延迟构建消息）
+     *
+     * @param text            待校验字符串
+     * @param regex           正则表达式
+     * @param messageSupplier 错误消息供应者
+     * @return 原字符串
+     */
+    public static String matches(String text, String regex, Supplier<String> messageSupplier) {
+        notNull(text, messageSupplier);
+        if (!text.matches(regex)) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串匹配正则表达式（延迟构建消息 + 占位符）
+     *
+     * @param text            待校验字符串
+     * @param regex           正则表达式
+     * @param messageSupplier 错误消息供应者（支持占位符）
+     * @param args            占位符参数
+     * @return 原字符串
+     */
+    public static String matches(String text, String regex, Supplier<String> messageSupplier, Object... args) {
+        notNull(text, messageSupplier, args);
+        if (!text.matches(regex)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串匹配正则表达式（带错误码）
+     *
+     * @param text    待校验字符串
+     * @param regex   正则表达式
+     * @param code    错误码
+     * @param message 错误消息
+     * @return 原字符串
+     */
+    public static String matches(String text, String regex, int code, String message) {
+        notNull(text, code, message);
+        if (!text.matches(regex)) {
+            throw newException(code, message);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串匹配正则表达式（带错误码 + 占位符消息）
+     *
+     * @param text    待校验字符串
+     * @param regex   正则表达式
+     * @param code    错误码
+     * @param message 错误消息模板（支持占位符）
+     * @param args    占位符参数
+     * @return 原字符串
+     */
+    public static String matches(String text, String regex, int code, String message, Object... args) {
+        notNull(text, code, message, args);
+        if (!text.matches(regex)) {
+            throw newException(code, formatMessage(message, args));
+        }
+        return text;
+    }
+
+    /**
      * 断言字符串匹配正则表达式（错误枚举）
+     *
+     * @param text      待校验字符串
+     * @param regex     正则表达式
+     * @param errorCode 错误枚举
+     * @return 原字符串
      */
     public static String matches(String text, String regex, IErrorCode errorCode) {
         notNull(text, errorCode);
@@ -5199,7 +5300,46 @@ public final class BizAssert {
     }
 
     /**
+     * 断言字符串匹配正则表达式（错误枚举 + 占位符参数）
+     *
+     * @param text      待校验字符串
+     * @param regex     正则表达式
+     * @param errorCode 错误枚举
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String matches(String text, String regex, IErrorCode errorCode, Object... args) {
+        notNull(text, errorCode, args);
+        if (!text.matches(regex)) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串匹配正则表达式（指定异常工厂 + 默认消息）
+     *
+     * @param text    待校验字符串
+     * @param regex   正则表达式
+     * @param factory 异常工厂
+     * @return 原字符串
+     */
+    public static String matches(String text, String regex, ExceptionFactory factory) {
+        notNull(text, "text must match regex: " + regex, factory);
+        if (!text.matches(regex)) {
+            throw newException(ErrorCodes.UNSPECIFIED, "text must match regex: " + regex, factory);
+        }
+        return text;
+    }
+
+    /**
      * 断言字符串匹配正则表达式（指定异常工厂）
+     *
+     * @param text    待校验字符串
+     * @param regex   正则表达式
+     * @param message 错误消息
+     * @param factory 异常工厂
+     * @return 原字符串
      */
     public static String matches(String text, String regex, String message, ExceptionFactory factory) {
         notNull(text, message, factory);
@@ -5209,12 +5349,202 @@ public final class BizAssert {
         return text;
     }
 
-    // ========================================================================
-    //  doesNotContain
-    // ========================================================================
+    /**
+     * 断言字符串匹配正则表达式（指定异常工厂 + 占位符参数）
+     *
+     * @param text    待校验字符串
+     * @param regex   正则表达式
+     * @param message 错误消息模板（支持占位符）
+     * @param factory 异常工厂
+     * @param args    占位符参数
+     * @return 原字符串
+     */
+    public static String matches(String text, String regex, String message, ExceptionFactory factory, Object... args) {
+        notNull(text, formatMessage(message, args), factory);
+        if (!text.matches(regex)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串匹配正则表达式（指定异常工厂 + 带错误码）
+     *
+     * @param text    待校验字符串
+     * @param regex   正则表达式
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂
+     * @return 原字符串
+     */
+    public static String matches(String text, String regex, int code, String message, ExceptionFactory factory) {
+        notNull(text, message, factory);
+        if (!text.matches(regex)) {
+            throw newException(code, message, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串匹配正则表达式（指定异常工厂 + 带错误码 + 占位符消息）
+     *
+     * @param text    待校验字符串
+     * @param regex   正则表达式
+     * @param code    错误码
+     * @param message 错误消息模板（支持占位符）
+     * @param factory 异常工厂
+     * @param args    占位符参数
+     * @return 原字符串
+     */
+    public static String matches(String text, String regex, int code, String message, ExceptionFactory factory, Object... args) {
+        notNull(text, formatMessage(message, args), factory);
+        if (!text.matches(regex)) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串匹配正则表达式（指定异常工厂 + 错误枚举）
+     *
+     * @param text      待校验字符串
+     * @param regex     正则表达式
+     * @param errorCode 错误枚举
+     * @param factory   异常工厂
+     * @return 原字符串
+     */
+    public static String matches(String text, String regex, IErrorCode errorCode, ExceptionFactory factory) {
+        notNull(text, errorCode.getMessage(), factory);
+        if (!text.matches(regex)) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串匹配正则表达式（指定异常工厂 + 错误枚举 + 占位符参数）
+     *
+     * @param text      待校验字符串
+     * @param regex     正则表达式
+     * @param errorCode 错误枚举
+     * @param factory   异常工厂
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String matches(String text, String regex, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        notNull(text, formatMessage(errorCode.getMessage(), args), factory);
+        if (!text.matches(regex)) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串匹配正则表达式（直接传入异常实例）
+     *
+     * @param text              待校验字符串
+     * @param regex             正则表达式
+     * @param exceptionSupplier 异常实例供应者
+     * @return 原字符串
+     */
+    public static String matchesOrThrow(String text, String regex, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (text == null || !text.matches(regex)) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串匹配正则表达式（label 机制）
+     *
+     * @param text  待校验字符串
+     * @param regex 正则表达式
+     * @param label 字段标签
+     * @return 原字符串
+     */
+    public static String matchesAs(String text, String regex, String label) {
+        notNull(text, label + " must not be null");
+        if (!text.matches(regex)) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must match regex: " + regex);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串匹配正则表达式（label 机制 + 带错误码）
+     *
+     * @param text  待校验字符串
+     * @param regex 正则表达式
+     * @param code  错误码
+     * @param label 字段标签
+     * @return 原字符串
+     */
+    public static String matchesAs(String text, String regex, int code, String label) {
+        notNull(text, label + " must not be null");
+        if (!text.matches(regex)) {
+            throw newException(code, label + " must match regex: " + regex);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串匹配正则表达式（label 机制 + 指定异常工厂）
+     *
+     * @param text    待校验字符串
+     * @param regex   正则表达式
+     * @param label   字段标签
+     * @param factory 异常工厂
+     * @return 原字符串
+     */
+    public static String matchesAs(String text, String regex, String label, ExceptionFactory factory) {
+        notNull(text, label + " must not be null", factory);
+        if (!text.matches(regex)) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must match regex: " + regex, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串匹配正则表达式（label 机制 + 错误码 + 指定异常工厂）
+     *
+     * @param text    待校验字符串
+     * @param regex   正则表达式
+     * @param code    错误码
+     * @param label   字段标签
+     * @param factory 异常工厂
+     * @return 原字符串
+     */
+    public static String matchesAs(String text, String regex, int code, String label, ExceptionFactory factory) {
+        notNull(text, label + " must not be null", factory);
+        if (!text.matches(regex)) {
+            throw newException(code, label + " must match regex: " + regex, factory);
+        }
+        return text;
+    }
+
+
+// ============================================================
+// doesNotContain：断言字符串不包含指定子串
+// ============================================================
+
+    /**
+     * 断言字符串不包含指定子串（默认消息）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @return 原字符串
+     */
+    public static String doesNotContain(String text, String substring) {
+        return doesNotContain(text, substring, "text must not contain: " + substring);
+    }
 
     /**
      * 断言字符串不包含指定子串
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param message   错误消息
+     * @return 原字符串
      */
     public static String doesNotContain(String text, String substring, String message) {
         if (text != null && substring != null && text.contains(substring)) {
@@ -5224,7 +5554,92 @@ public final class BizAssert {
     }
 
     /**
+     * 断言字符串不包含指定子串（占位符消息）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param message   错误消息模板（支持占位符）
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String doesNotContain(String text, String substring, String message, Object... args) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不包含指定子串（延迟构建消息）
+     *
+     * @param text            待校验字符串
+     * @param substring       不允许出现的子串
+     * @param messageSupplier 错误消息供应者
+     * @return 原字符串
+     */
+    public static String doesNotContain(String text, String substring, Supplier<String> messageSupplier) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不包含指定子串（延迟构建消息 + 占位符）
+     *
+     * @param text            待校验字符串
+     * @param substring       不允许出现的子串
+     * @param messageSupplier 错误消息供应者（支持占位符）
+     * @param args            占位符参数
+     * @return 原字符串
+     */
+    public static String doesNotContain(String text, String substring, Supplier<String> messageSupplier, Object... args) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不包含指定子串（带错误码）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param code      错误码
+     * @param message   错误消息
+     * @return 原字符串
+     */
+    public static String doesNotContain(String text, String substring, int code, String message) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(code, message);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不包含指定子串（带错误码 + 占位符消息）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param code      错误码
+     * @param message   错误消息模板（支持占位符）
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String doesNotContain(String text, String substring, int code, String message, Object... args) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(code, formatMessage(message, args));
+        }
+        return text;
+    }
+
+    /**
      * 断言字符串不包含指定子串（错误枚举）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param errorCode 错误枚举
+     * @return 原字符串
      */
     public static String doesNotContain(String text, String substring, IErrorCode errorCode) {
         if (text != null && substring != null && text.contains(substring)) {
@@ -5233,12 +5648,240 @@ public final class BizAssert {
         return text;
     }
 
-    // ========================================================================
-    //  contains
-    // ========================================================================
+    /**
+     * 断言字符串不包含指定子串（错误枚举 + 占位符参数）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param errorCode 错误枚举
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String doesNotContain(String text, String substring, IErrorCode errorCode, Object... args) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不包含指定子串（指定异常工厂 + 默认消息）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param factory   异常工厂
+     * @return 原字符串
+     */
+    public static String doesNotContain(String text, String substring, ExceptionFactory factory) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(ErrorCodes.UNSPECIFIED, "text must not contain: " + substring, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不包含指定子串（指定异常工厂）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param message   错误消息
+     * @param factory   异常工厂
+     * @return 原字符串
+     */
+    public static String doesNotContain(String text, String substring, String message, ExceptionFactory factory) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不包含指定子串（指定异常工厂 + 占位符参数）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param message   错误消息模板（支持占位符）
+     * @param factory   异常工厂
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String doesNotContain(String text, String substring, String message, ExceptionFactory factory, Object... args) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不包含指定子串（指定异常工厂 + 带错误码）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param code      错误码
+     * @param message   错误消息
+     * @param factory   异常工厂
+     * @return 原字符串
+     */
+    public static String doesNotContain(String text, String substring, int code, String message, ExceptionFactory factory) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(code, message, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不包含指定子串（指定异常工厂 + 带错误码 + 占位符消息）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param code      错误码
+     * @param message   错误消息模板（支持占位符）
+     * @param factory   异常工厂
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String doesNotContain(String text, String substring, int code, String message, ExceptionFactory factory, Object... args) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不包含指定子串（指定异常工厂 + 错误枚举）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param errorCode 错误枚举
+     * @param factory   异常工厂
+     * @return 原字符串
+     */
+    public static String doesNotContain(String text, String substring, IErrorCode errorCode, ExceptionFactory factory) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不包含指定子串（指定异常工厂 + 错误枚举 + 占位符参数）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param errorCode 错误枚举
+     * @param factory   异常工厂
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String doesNotContain(String text, String substring, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不包含指定子串（直接传入异常实例）
+     *
+     * @param text              待校验字符串
+     * @param substring         不允许出现的子串
+     * @param exceptionSupplier 异常实例供应者
+     * @return 原字符串
+     */
+    public static String doesNotContainOrThrow(String text, String substring, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不包含指定子串（label 机制）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param label     字段标签
+     * @return 原字符串
+     */
+    public static String doesNotContainAs(String text, String substring, String label) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must not contain: " + substring);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不包含指定子串（label 机制 + 带错误码）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param code      错误码
+     * @param label     字段标签
+     * @return 原字符串
+     */
+    public static String doesNotContainAs(String text, String substring, int code, String label) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(code, label + " must not contain: " + substring);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不包含指定子串（label 机制 + 指定异常工厂）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param label     字段标签
+     * @param factory   异常工厂
+     * @return 原字符串
+     */
+    public static String doesNotContainAs(String text, String substring, String label, ExceptionFactory factory) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must not contain: " + substring, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串不包含指定子串（label 机制 + 错误码 + 指定异常工厂）
+     *
+     * @param text      待校验字符串
+     * @param substring 不允许出现的子串
+     * @param code      错误码
+     * @param label     字段标签
+     * @param factory   异常工厂
+     * @return 原字符串
+     */
+    public static String doesNotContainAs(String text, String substring, int code, String label, ExceptionFactory factory) {
+        if (text != null && substring != null && text.contains(substring)) {
+            throw newException(code, label + " must not contain: " + substring, factory);
+        }
+        return text;
+    }
+
+
+    // ============================================================
+    // contains：断言字符串包含指定子串
+    // ============================================================
+
+    /**
+     * 断言字符串包含指定子串（默认消息）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @return 原字符串
+     */
+    public static String contains(String text, String substring) {
+        return contains(text, substring, "text must contain: " + substring);
+    }
 
     /**
      * 断言字符串包含指定子串
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param message   错误消息
+     * @return 原字符串
      */
     public static String contains(String text, String substring, String message) {
         notNull(text, message);
@@ -5249,22 +5892,352 @@ public final class BizAssert {
     }
 
     /**
+     * 断言字符串包含指定子串（占位符消息）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param message   错误消息模板（支持占位符）
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String contains(String text, String substring, String message, Object... args) {
+        notNull(text, formatMessage(message, args));
+        if (substring != null && !text.contains(substring)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串包含指定子串（延迟构建消息）
+     *
+     * @param text            待校验字符串
+     * @param substring       必须包含的子串
+     * @param messageSupplier 错误消息供应者
+     * @return 原字符串
+     */
+    public static String contains(String text, String substring, Supplier<String> messageSupplier) {
+        notNull(text, messageSupplier);
+        if (substring != null && !text.contains(substring)) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串包含指定子串（延迟构建消息 + 占位符）
+     *
+     * @param text            待校验字符串
+     * @param substring       必须包含的子串
+     * @param messageSupplier 错误消息供应者（支持占位符）
+     * @param args            占位符参数
+     * @return 原字符串
+     */
+    public static String contains(String text, String substring, Supplier<String> messageSupplier, Object... args) {
+        notNull(text, formatMessage(nullSafeGet(messageSupplier), args));
+        if (substring != null && !text.contains(substring)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串包含指定子串（带错误码）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param code      错误码
+     * @param message   错误消息
+     * @return 原字符串
+     */
+    public static String contains(String text, String substring, int code, String message) {
+        notNull(text, message);
+        if (substring != null && !text.contains(substring)) {
+            throw newException(code, message);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串包含指定子串（带错误码 + 占位符消息）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param code      错误码
+     * @param message   错误消息模板（支持占位符）
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String contains(String text, String substring, int code, String message, Object... args) {
+        notNull(text, formatMessage(message, args));
+        if (substring != null && !text.contains(substring)) {
+            throw newException(code, formatMessage(message, args));
+        }
+        return text;
+    }
+
+    /**
      * 断言字符串包含指定子串（错误枚举）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param errorCode 错误枚举
+     * @return 原字符串
      */
     public static String contains(String text, String substring, IErrorCode errorCode) {
-        notNull(text, errorCode);
+        notNull(text, errorCode.getMessage());
         if (substring != null && !text.contains(substring)) {
             throw newException(errorCode.getCode(), errorCode.getMessage());
         }
         return text;
     }
 
-    // ========================================================================
-    //  startsWith / endsWith
-    // ========================================================================
+    /**
+     * 断言字符串包含指定子串（错误枚举 + 占位符参数）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param errorCode 错误枚举
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String contains(String text, String substring, IErrorCode errorCode, Object... args) {
+        notNull(text, formatMessage(errorCode.getMessage(), args));
+        if (substring != null && !text.contains(substring)) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串包含指定子串（指定异常工厂 + 默认消息）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param factory   异常工厂
+     * @return 原字符串
+     */
+    public static String contains(String text, String substring, ExceptionFactory factory) {
+        notNull(text, "text must contain: " + substring, factory);
+        if (substring != null && !text.contains(substring)) {
+            throw newException(ErrorCodes.UNSPECIFIED, "text must contain: " + substring, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串包含指定子串（指定异常工厂）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param message   错误消息
+     * @param factory   异常工厂
+     * @return 原字符串
+     */
+    public static String contains(String text, String substring, String message, ExceptionFactory factory) {
+        notNull(text, message, factory);
+        if (substring != null && !text.contains(substring)) {
+            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串包含指定子串（指定异常工厂 + 占位符参数）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param message   错误消息模板（支持占位符）
+     * @param factory   异常工厂
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String contains(String text, String substring, String message, ExceptionFactory factory, Object... args) {
+        notNull(text, formatMessage(message, args), factory);
+        if (substring != null && !text.contains(substring)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串包含指定子串（指定异常工厂 + 带错误码）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param code      错误码
+     * @param message   错误消息
+     * @param factory   异常工厂
+     * @return 原字符串
+     */
+    public static String contains(String text, String substring, int code, String message, ExceptionFactory factory) {
+        notNull(text, message, factory);
+        if (substring != null && !text.contains(substring)) {
+            throw newException(code, message, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串包含指定子串（指定异常工厂 + 带错误码 + 占位符消息）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param code      错误码
+     * @param message   错误消息模板（支持占位符）
+     * @param factory   异常工厂
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String contains(String text, String substring, int code, String message, ExceptionFactory factory, Object... args) {
+        notNull(text, formatMessage(message, args), factory);
+        if (substring != null && !text.contains(substring)) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串包含指定子串（指定异常工厂 + 错误枚举）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param errorCode 错误枚举
+     * @param factory   异常工厂
+     * @return 原字符串
+     */
+    public static String contains(String text, String substring, IErrorCode errorCode, ExceptionFactory factory) {
+        notNull(text, errorCode.getMessage(), factory);
+        if (substring != null && !text.contains(substring)) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串包含指定子串（指定异常工厂 + 错误枚举 + 占位符参数）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param errorCode 错误枚举
+     * @param factory   异常工厂
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String contains(String text, String substring, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        notNull(text, formatMessage(errorCode.getMessage(), args), factory);
+        if (substring != null && !text.contains(substring)) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串包含指定子串（直接传入异常实例）
+     *
+     * @param text              待校验字符串
+     * @param substring         必须包含的子串
+     * @param exceptionSupplier 异常实例供应者
+     * @return 原字符串
+     */
+    public static String containsOrThrow(String text, String substring, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (text == null || (substring != null && !text.contains(substring))) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串包含指定子串（label 机制）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param label     字段标签
+     * @return 原字符串
+     */
+    public static String containsAs(String text, String substring, String label) {
+        notNull(text, label + " must not be null");
+        if (substring != null && !text.contains(substring)) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must contain: " + substring);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串包含指定子串（label 机制 + 带错误码）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param code      错误码
+     * @param label     字段标签
+     * @return 原字符串
+     */
+    public static String containsAs(String text, String substring, int code, String label) {
+        notNull(text, label + " must not be null");
+        if (substring != null && !text.contains(substring)) {
+            throw newException(code, label + " must contain: " + substring);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串包含指定子串（label 机制 + 指定异常工厂）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param label     字段标签
+     * @param factory   异常工厂
+     * @return 原字符串
+     */
+    public static String containsAs(String text, String substring, String label, ExceptionFactory factory) {
+        notNull(text, label + " must not be null", factory);
+        if (substring != null && !text.contains(substring)) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must contain: " + substring, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串包含指定子串（label 机制 + 错误码 + 指定异常工厂）
+     *
+     * @param text      待校验字符串
+     * @param substring 必须包含的子串
+     * @param code      错误码
+     * @param label     字段标签
+     * @param factory   异常工厂
+     * @return 原字符串
+     */
+    public static String containsAs(String text, String substring, int code, String label, ExceptionFactory factory) {
+        notNull(text, label + " must not be null", factory);
+        if (substring != null && !text.contains(substring)) {
+            throw newException(code, label + " must contain: " + substring, factory);
+        }
+        return text;
+    }
+
+
+    // ============================================================
+    // startsWith：断言字符串以指定前缀开头
+    // ============================================================
+
+    /**
+     * 断言字符串以指定前缀开头（默认消息）
+     *
+     * @param text   待校验字符串
+     * @param prefix 必须匹配的前缀
+     * @return 原字符串
+     */
+    public static String startsWith(String text, String prefix) {
+        return startsWith(text, prefix, "text must start with: " + prefix);
+    }
 
     /**
      * 断言字符串以指定前缀开头
+     *
+     * @param text    待校验字符串
+     * @param prefix  必须匹配的前缀
+     * @param message 错误消息
+     * @return 原字符串
      */
     public static String startsWith(String text, String prefix, String message) {
         notNull(text, message);
@@ -5275,10 +6248,100 @@ public final class BizAssert {
     }
 
     /**
+     * 断言字符串以指定前缀开头（占位符消息）
+     *
+     * @param text    待校验字符串
+     * @param prefix  必须匹配的前缀
+     * @param message 错误消息模板（支持占位符）
+     * @param args    占位符参数
+     * @return 原字符串
+     */
+    public static String startsWith(String text, String prefix, String message, Object... args) {
+        notNull(text, formatMessage(message, args));
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定前缀开头（延迟构建消息）
+     *
+     * @param text            待校验字符串
+     * @param prefix          必须匹配的前缀
+     * @param messageSupplier 错误消息供应者
+     * @return 原字符串
+     */
+    public static String startsWith(String text, String prefix, Supplier<String> messageSupplier) {
+        notNull(text, messageSupplier);
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定前缀开头（延迟构建消息 + 占位符）
+     *
+     * @param text            待校验字符串
+     * @param prefix          必须匹配的前缀
+     * @param messageSupplier 错误消息供应者（支持占位符）
+     * @param args            占位符参数
+     * @return 原字符串
+     */
+    public static String startsWith(String text, String prefix, Supplier<String> messageSupplier, Object... args) {
+        notNull(text, formatMessage(nullSafeGet(messageSupplier), args));
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定前缀开头（带错误码）
+     *
+     * @param text    待校验字符串
+     * @param prefix  必须匹配的前缀
+     * @param code    错误码
+     * @param message 错误消息
+     * @return 原字符串
+     */
+    public static String startsWith(String text, String prefix, int code, String message) {
+        notNull(text, message);
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(code, message);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定前缀开头（带错误码 + 占位符消息）
+     *
+     * @param text    待校验字符串
+     * @param prefix  必须匹配的前缀
+     * @param code    错误码
+     * @param message 错误消息模板（支持占位符）
+     * @param args    占位符参数
+     * @return 原字符串
+     */
+    public static String startsWith(String text, String prefix, int code, String message, Object... args) {
+        notNull(text, formatMessage(message, args));
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(code, formatMessage(message, args));
+        }
+        return text;
+    }
+
+    /**
      * 断言字符串以指定前缀开头（错误枚举）
+     *
+     * @param text      待校验字符串
+     * @param prefix    必须匹配的前缀
+     * @param errorCode 错误枚举
+     * @return 原字符串
      */
     public static String startsWith(String text, String prefix, IErrorCode errorCode) {
-        notNull(text, errorCode);
+        notNull(text, errorCode.getMessage());
         if (prefix != null && !text.startsWith(prefix)) {
             throw newException(errorCode.getCode(), errorCode.getMessage());
         }
@@ -5286,7 +6349,251 @@ public final class BizAssert {
     }
 
     /**
+     * 断言字符串以指定前缀开头（错误枚举 + 占位符参数）
+     *
+     * @param text      待校验字符串
+     * @param prefix    必须匹配的前缀
+     * @param errorCode 错误枚举
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String startsWith(String text, String prefix, IErrorCode errorCode, Object... args) {
+        notNull(text, formatMessage(errorCode.getMessage(), args));
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定前缀开头（指定异常工厂 + 默认消息）
+     *
+     * @param text    待校验字符串
+     * @param prefix  必须匹配的前缀
+     * @param factory 异常工厂
+     * @return 原字符串
+     */
+    public static String startsWith(String text, String prefix, ExceptionFactory factory) {
+        notNull(text, "text must start with: " + prefix, factory);
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(ErrorCodes.UNSPECIFIED, "text must start with: " + prefix, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定前缀开头（指定异常工厂）
+     *
+     * @param text    待校验字符串
+     * @param prefix  必须匹配的前缀
+     * @param message 错误消息
+     * @param factory 异常工厂
+     * @return 原字符串
+     */
+    public static String startsWith(String text, String prefix, String message, ExceptionFactory factory) {
+        notNull(text, message, factory);
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定前缀开头（指定异常工厂 + 占位符参数）
+     *
+     * @param text    待校验字符串
+     * @param prefix  必须匹配的前缀
+     * @param message 错误消息模板（支持占位符）
+     * @param factory 异常工厂
+     * @param args    占位符参数
+     * @return 原字符串
+     */
+    public static String startsWith(String text, String prefix, String message, ExceptionFactory factory, Object... args) {
+        notNull(text, formatMessage(message, args), factory);
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定前缀开头（指定异常工厂 + 带错误码）
+     *
+     * @param text    待校验字符串
+     * @param prefix  必须匹配的前缀
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂
+     * @return 原字符串
+     */
+    public static String startsWith(String text, String prefix, int code, String message, ExceptionFactory factory) {
+        notNull(text, message, factory);
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(code, message, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定前缀开头（指定异常工厂 + 带错误码 + 占位符消息）
+     *
+     * @param text    待校验字符串
+     * @param prefix  必须匹配的前缀
+     * @param code    错误码
+     * @param message 错误消息模板（支持占位符）
+     * @param factory 异常工厂
+     * @param args    占位符参数
+     * @return 原字符串
+     */
+    public static String startsWith(String text, String prefix, int code, String message, ExceptionFactory factory, Object... args) {
+        notNull(text, formatMessage(message, args), factory);
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定前缀开头（指定异常工厂 + 错误枚举）
+     *
+     * @param text      待校验字符串
+     * @param prefix    必须匹配的前缀
+     * @param errorCode 错误枚举
+     * @param factory   异常工厂
+     * @return 原字符串
+     */
+    public static String startsWith(String text, String prefix, IErrorCode errorCode, ExceptionFactory factory) {
+        notNull(text, errorCode.getMessage(), factory);
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定前缀开头（指定异常工厂 + 错误枚举 + 占位符参数）
+     *
+     * @param text      待校验字符串
+     * @param prefix    必须匹配的前缀
+     * @param errorCode 错误枚举
+     * @param factory   异常工厂
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String startsWith(String text, String prefix, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        notNull(text, formatMessage(errorCode.getMessage(), args), factory);
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定前缀开头（直接传入异常实例）
+     *
+     * @param text              待校验字符串
+     * @param prefix            必须匹配的前缀
+     * @param exceptionSupplier 异常实例供应者
+     * @return 原字符串
+     */
+    public static String startsWithOrThrow(String text, String prefix, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (text == null || (prefix != null && !text.startsWith(prefix))) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定前缀开头（label 机制）
+     *
+     * @param text   待校验字符串
+     * @param prefix 必须匹配的前缀
+     * @param label  字段标签
+     * @return 原字符串
+     */
+    public static String startsWithAs(String text, String prefix, String label) {
+        notNull(text, label + " must not be null");
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must start with: " + prefix);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定前缀开头（label 机制 + 带错误码）
+     *
+     * @param text   待校验字符串
+     * @param prefix 必须匹配的前缀
+     * @param code   错误码
+     * @param label  字段标签
+     * @return 原字符串
+     */
+    public static String startsWithAs(String text, String prefix, int code, String label) {
+        notNull(text, label + " must not be null");
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(code, label + " must start with: " + prefix);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定前缀开头（label 机制 + 指定异常工厂）
+     *
+     * @param text    待校验字符串
+     * @param prefix  必须匹配的前缀
+     * @param label   字段标签
+     * @param factory 异常工厂
+     * @return 原字符串
+     */
+    public static String startsWithAs(String text, String prefix, String label, ExceptionFactory factory) {
+        notNull(text, label + " must not be null", factory);
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must start with: " + prefix, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定前缀开头（label 机制 + 错误码 + 指定异常工厂）
+     *
+     * @param text    待校验字符串
+     * @param prefix  必须匹配的前缀
+     * @param code    错误码
+     * @param label   字段标签
+     * @param factory 异常工厂
+     * @return 原字符串
+     */
+    public static String startsWithAs(String text, String prefix, int code, String label, ExceptionFactory factory) {
+        notNull(text, label + " must not be null", factory);
+        if (prefix != null && !text.startsWith(prefix)) {
+            throw newException(code, label + " must start with: " + prefix, factory);
+        }
+        return text;
+    }
+
+
+    // ============================================================
+    // endsWith：断言字符串以指定后缀结尾
+    // ============================================================
+
+    /**
+     * 断言字符串以指定后缀结尾（默认消息）
+     *
+     * @param text   待校验字符串
+     * @param suffix 必须匹配的后缀
+     * @return 原字符串
+     */
+    public static String endsWith(String text, String suffix) {
+        return endsWith(text, suffix, "text must end with: " + suffix);
+    }
+
+    /**
      * 断言字符串以指定后缀结尾
+     *
+     * @param text    待校验字符串
+     * @param suffix  必须匹配的后缀
+     * @param message 错误消息
+     * @return 原字符串
      */
     public static String endsWith(String text, String suffix, String message) {
         notNull(text, message);
@@ -5297,12 +6604,325 @@ public final class BizAssert {
     }
 
     /**
+     * 断言字符串以指定后缀结尾（占位符消息）
+     *
+     * @param text    待校验字符串
+     * @param suffix  必须匹配的后缀
+     * @param message 错误消息模板（支持占位符）
+     * @param args    占位符参数
+     * @return 原字符串
+     */
+    public static String endsWith(String text, String suffix, String message, Object... args) {
+        notNull(text, formatMessage(message, args));
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（延迟构建消息）
+     *
+     * @param text            待校验字符串
+     * @param suffix          必须匹配的后缀
+     * @param messageSupplier 错误消息供应者
+     * @return 原字符串
+     */
+    public static String endsWith(String text, String suffix, Supplier<String> messageSupplier) {
+        notNull(text, messageSupplier);
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（延迟构建消息 + 占位符）
+     *
+     * @param text            待校验字符串
+     * @param suffix          必须匹配的后缀
+     * @param messageSupplier 错误消息供应者（支持占位符）
+     * @param args            占位符参数
+     * @return 原字符串
+     */
+    public static String endsWith(String text, String suffix, Supplier<String> messageSupplier, Object... args) {
+        notNull(text, formatMessage(nullSafeGet(messageSupplier), args));
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（带错误码）
+     *
+     * @param text    待校验字符串
+     * @param suffix  必须匹配的后缀
+     * @param code    错误码
+     * @param message 错误消息
+     * @return 原字符串
+     */
+    public static String endsWith(String text, String suffix, int code, String message) {
+        notNull(text, message);
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(code, message);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（带错误码 + 占位符消息）
+     *
+     * @param text    待校验字符串
+     * @param suffix  必须匹配的后缀
+     * @param code    错误码
+     * @param message 错误消息模板（支持占位符）
+     * @param args    占位符参数
+     * @return 原字符串
+     */
+    public static String endsWith(String text, String suffix, int code, String message, Object... args) {
+        notNull(text, formatMessage(message, args));
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(code, formatMessage(message, args));
+        }
+        return text;
+    }
+
+    /**
      * 断言字符串以指定后缀结尾（错误枚举）
+     *
+     * @param text      待校验字符串
+     * @param suffix    必须匹配的后缀
+     * @param errorCode 错误枚举
+     * @return 原字符串
      */
     public static String endsWith(String text, String suffix, IErrorCode errorCode) {
-        notNull(text, errorCode);
+        notNull(text, errorCode.getMessage());
         if (suffix != null && !text.endsWith(suffix)) {
             throw newException(errorCode.getCode(), errorCode.getMessage());
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（错误枚举 + 占位符参数）
+     *
+     * @param text      待校验字符串
+     * @param suffix    必须匹配的后缀
+     * @param errorCode 错误枚举
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String endsWith(String text, String suffix, IErrorCode errorCode, Object... args) {
+        notNull(text, formatMessage(errorCode.getMessage(), args));
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（指定异常工厂 + 默认消息）
+     *
+     * @param text    待校验字符串
+     * @param suffix  必须匹配的后缀
+     * @param factory 异常工厂
+     * @return 原字符串
+     */
+    public static String endsWith(String text, String suffix, ExceptionFactory factory) {
+        notNull(text, "text must end with: " + suffix, factory);
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(ErrorCodes.UNSPECIFIED, "text must end with: " + suffix, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（指定异常工厂）
+     *
+     * @param text    待校验字符串
+     * @param suffix  必须匹配的后缀
+     * @param message 错误消息
+     * @param factory 异常工厂
+     * @return 原字符串
+     */
+    public static String endsWith(String text, String suffix, String message, ExceptionFactory factory) {
+        notNull(text, message, factory);
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（指定异常工厂 + 占位符参数）
+     *
+     * @param text    待校验字符串
+     * @param suffix  必须匹配的后缀
+     * @param message 错误消息模板（支持占位符）
+     * @param factory 异常工厂
+     * @param args    占位符参数
+     * @return 原字符串
+     */
+    public static String endsWith(String text, String suffix, String message, ExceptionFactory factory, Object... args) {
+        notNull(text, formatMessage(message, args), factory);
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（指定异常工厂 + 带错误码）
+     *
+     * @param text    待校验字符串
+     * @param suffix  必须匹配的后缀
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂
+     * @return 原字符串
+     */
+    public static String endsWith(String text, String suffix, int code, String message, ExceptionFactory factory) {
+        notNull(text, message, factory);
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(code, message, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（指定异常工厂 + 带错误码 + 占位符消息）
+     *
+     * @param text    待校验字符串
+     * @param suffix  必须匹配的后缀
+     * @param code    错误码
+     * @param message 错误消息模板（支持占位符）
+     * @param factory 异常工厂
+     * @param args    占位符参数
+     * @return 原字符串
+     */
+    public static String endsWith(String text, String suffix, int code, String message, ExceptionFactory factory, Object... args) {
+        notNull(text, formatMessage(message, args), factory);
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（指定异常工厂 + 错误枚举）
+     *
+     * @param text      待校验字符串
+     * @param suffix    必须匹配的后缀
+     * @param errorCode 错误枚举
+     * @param factory   异常工厂
+     * @return 原字符串
+     */
+    public static String endsWith(String text, String suffix, IErrorCode errorCode, ExceptionFactory factory) {
+        notNull(text, errorCode.getMessage(), factory);
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（指定异常工厂 + 错误枚举 + 占位符参数）
+     *
+     * @param text      待校验字符串
+     * @param suffix    必须匹配的后缀
+     * @param errorCode 错误枚举
+     * @param factory   异常工厂
+     * @param args      占位符参数
+     * @return 原字符串
+     */
+    public static String endsWith(String text, String suffix, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        notNull(text, formatMessage(errorCode.getMessage(), args), factory);
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（直接传入异常实例）
+     *
+     * @param text              待校验字符串
+     * @param suffix            必须匹配的后缀
+     * @param exceptionSupplier 异常实例供应者
+     * @return 原字符串
+     */
+    public static String endsWithOrThrow(String text, String suffix, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (text == null || (suffix != null && !text.endsWith(suffix))) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（label 机制）
+     *
+     * @param text   待校验字符串
+     * @param suffix 必须匹配的后缀
+     * @param label  字段标签
+     * @return 原字符串
+     */
+    public static String endsWithAs(String text, String suffix, String label) {
+        notNull(text, label + " must not be null");
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must end with: " + suffix);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（label 机制 + 带错误码）
+     *
+     * @param text   待校验字符串
+     * @param suffix 必须匹配的后缀
+     * @param code   错误码
+     * @param label  字段标签
+     * @return 原字符串
+     */
+    public static String endsWithAs(String text, String suffix, int code, String label) {
+        notNull(text, label + " must not be null");
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(code, label + " must end with: " + suffix);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（label 机制 + 指定异常工厂）
+     *
+     * @param text    待校验字符串
+     * @param suffix  必须匹配的后缀
+     * @param label   字段标签
+     * @param factory 异常工厂
+     * @return 原字符串
+     */
+    public static String endsWithAs(String text, String suffix, String label, ExceptionFactory factory) {
+        notNull(text, label + " must not be null", factory);
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must end with: " + suffix, factory);
+        }
+        return text;
+    }
+
+    /**
+     * 断言字符串以指定后缀结尾（label 机制 + 错误码 + 指定异常工厂）
+     *
+     * @param text    待校验字符串
+     * @param suffix  必须匹配的后缀
+     * @param code    错误码
+     * @param label   字段标签
+     * @param factory 异常工厂
+     * @return 原字符串
+     */
+    public static String endsWithAs(String text, String suffix, int code, String label, ExceptionFactory factory) {
+        notNull(text, label + " must not be null", factory);
+        if (suffix != null && !text.endsWith(suffix)) {
+            throw newException(code, label + " must end with: " + suffix, factory);
         }
         return text;
     }
