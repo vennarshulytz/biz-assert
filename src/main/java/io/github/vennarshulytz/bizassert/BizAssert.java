@@ -4077,12 +4077,27 @@ public final class BizAssert {
         return value;
     }
 
+    // ===================== int 类型 =====================
+
     /**
      * 断言数值在指定范围内（闭区间 [min, max]）
      *
      * @param value 待校验数值
      * @param min   最小值（含）
      * @param max   最大值（含）
+     * @return 原数值
+     */
+    public static int isBetween(int value, int min, int max) {
+        return isBetween(value, min, max, "value must be between " + min + " and " + max + ", but was " + value);
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param message 错误消息
      * @return 原数值
      */
     public static int isBetween(int value, int min, int max, String message) {
@@ -4092,23 +4107,100 @@ public final class BizAssert {
         return value;
     }
 
-    public static int isBetween(int value, int min, int max) {
-        return isBetween(value, min, max,
-                "value must be between " + min + " and " + max + ", but was " + value);
-    }
-
-    public static long isBetween(long value, long min, long max, String message) {
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（占位符消息）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param message 错误消息模板，支持 {} 占位符
+     * @param args    占位符参数
+     * @return 原数值
+     */
+    public static int isBetween(int value, int min, int max, String message, Object... args) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
         }
         return value;
     }
 
-    public static long isBetween(long value, long min, long max) {
-        return isBetween(value, min, max,
-                "value must be between " + min + " and " + max + ", but was " + value);
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（延迟构建消息）
+     *
+     * @param value           待校验数值
+     * @param min             最小值（含）
+     * @param max             最大值（含）
+     * @param messageSupplier 错误消息提供者，仅在断言失败时调用
+     * @return 原数值
+     */
+    public static int isBetween(int value, int min, int max, Supplier<String> messageSupplier) {
+        if (value < min || value > max) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return value;
     }
 
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（延迟构建消息 + 占位符）
+     *
+     * @param value           待校验数值
+     * @param min             最小值（含）
+     * @param max             最大值（含）
+     * @param messageSupplier 错误消息模板提供者，支持 {} 占位符
+     * @param args            占位符参数
+     * @return 原数值
+     */
+    public static int isBetween(int value, int min, int max, Supplier<String> messageSupplier, Object... args) {
+        if (value < min || value > max) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（带错误码）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param code    错误码
+     * @param message 错误消息
+     * @return 原数值
+     */
+    public static int isBetween(int value, int min, int max, int code, String message) {
+        if (value < min || value > max) {
+            throw newException(code, message);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（带错误码 + 占位符消息）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {} 占位符
+     * @param args    占位符参数
+     * @return 原数值
+     */
+    public static int isBetween(int value, int min, int max, int code, String message, Object... args) {
+        if (value < min || value > max) {
+            throw newException(code, formatMessage(message, args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（错误枚举）
+     *
+     * @param value     待校验数值
+     * @param min       最小值（含）
+     * @param max       最大值（含）
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @return 原数值
+     */
     public static int isBetween(int value, int min, int max, IErrorCode errorCode) {
         if (value < min || value > max) {
             throw newException(errorCode.getCode(), errorCode.getMessage());
@@ -4116,6 +4208,355 @@ public final class BizAssert {
         return value;
     }
 
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（错误枚举 + 占位符参数）
+     *
+     * @param value     待校验数值
+     * @param min       最小值（含）
+     * @param max       最大值（含）
+     * @param errorCode 错误枚举，消息模板支持 {} 占位符
+     * @param args      占位符参数
+     * @return 原数值
+     */
+    public static int isBetween(int value, int min, int max, IErrorCode errorCode, Object... args) {
+        if (value < min || value > max) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 默认消息）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @return 原数值
+     */
+    public static int isBetween(int value, int min, int max, ExceptionFactory factory) {
+        if (value < min || value > max) {
+            throw newException(ErrorCodes.UNSPECIFIED, "value must be between " + min + " and " + max + ", but was " + value, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param message 错误消息
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @return 原数值
+     */
+    public static int isBetween(int value, int min, int max, String message, ExceptionFactory factory) {
+        if (value < min || value > max) {
+            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 占位符参数）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param message 错误消息模板，支持 {} 占位符
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @param args    占位符参数
+     * @return 原数值
+     */
+    public static int isBetween(int value, int min, int max, String message, ExceptionFactory factory, Object... args) {
+        if (value < min || value > max) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 带错误码）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @return 原数值
+     */
+    public static int isBetween(int value, int min, int max, int code, String message, ExceptionFactory factory) {
+        if (value < min || value > max) {
+            throw newException(code, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 带错误码 + 占位符消息）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {} 占位符
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @param args    占位符参数
+     * @return 原数值
+     */
+    public static int isBetween(int value, int min, int max, int code, String message, ExceptionFactory factory, Object... args) {
+        if (value < min || value > max) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 错误枚举）
+     *
+     * @param value     待校验数值
+     * @param min       最小值（含）
+     * @param max       最大值（含）
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于创建自定义异常类型
+     * @return 原数值
+     */
+    public static int isBetween(int value, int min, int max, IErrorCode errorCode, ExceptionFactory factory) {
+        if (value < min || value > max) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 错误枚举 + 占位符参数）
+     *
+     * @param value     待校验数值
+     * @param min       最小值（含）
+     * @param max       最大值（含）
+     * @param errorCode 错误枚举，消息模板支持 {} 占位符
+     * @param factory   异常工厂，用于创建自定义异常类型
+     * @param args      占位符参数
+     * @return 原数值
+     */
+    public static int isBetween(int value, int min, int max, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (value < min || value > max) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（直接传入异常实例）
+     *
+     * @param value             待校验数值
+     * @param min               最小值（含）
+     * @param max               最大值（含）
+     * @param exceptionSupplier 异常提供者，仅在断言失败时调用
+     * @return 原数值
+     */
+    public static int isBetweenOrThrow(int value, int min, int max, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (value < min || value > max) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（label 机制）
+     *
+     * @param value 待校验数值
+     * @param min   最小值（含）
+     * @param max   最大值（含）
+     * @param label 字段/参数标签，用于生成语义化错误消息，如 "age must be between 1 and 120"
+     * @return 原数值
+     */
+    public static int isBetweenAs(int value, int min, int max, String label) {
+        if (value < min || value > max) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be between " + min + " and " + max + ", but was " + value);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（label 机制 + 带错误码）
+     *
+     * @param value 待校验数值
+     * @param min   最小值（含）
+     * @param max   最大值（含）
+     * @param code  错误码
+     * @param label 字段/参数标签，用于生成语义化错误消息
+     * @return 原数值
+     */
+    public static int isBetweenAs(int value, int min, int max, int code, String label) {
+        if (value < min || value > max) {
+            throw newException(code, label + " must be between " + min + " and " + max + ", but was " + value);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（label 机制 + 指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param label   字段/参数标签，用于生成语义化错误消息
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @return 原数值
+     */
+    public static int isBetweenAs(int value, int min, int max, String label, ExceptionFactory factory) {
+        if (value < min || value > max) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be between " + min + " and " + max + ", but was " + value, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（label 机制 + 错误码 + 指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param code    错误码
+     * @param label   字段/参数标签，用于生成语义化错误消息
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @return 原数值
+     */
+    public static int isBetweenAs(int value, int min, int max, int code, String label, ExceptionFactory factory) {
+        if (value < min || value > max) {
+            throw newException(code, label + " must be between " + min + " and " + max + ", but was " + value, factory);
+        }
+        return value;
+    }
+
+
+// ===================== long 类型 =====================
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）
+     *
+     * @param value 待校验数值
+     * @param min   最小值（含）
+     * @param max   最大值（含）
+     * @return 原数值
+     */
+    public static long isBetween(long value, long min, long max) {
+        return isBetween(value, min, max, "value must be between " + min + " and " + max + ", but was " + value);
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param message 错误消息
+     * @return 原数值
+     */
+    public static long isBetween(long value, long min, long max, String message) {
+        if (value < min || value > max) {
+            throw newException(ErrorCodes.UNSPECIFIED, message);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（占位符消息）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param message 错误消息模板，支持 {} 占位符
+     * @param args    占位符参数
+     * @return 原数值
+     */
+    public static long isBetween(long value, long min, long max, String message, Object... args) {
+        if (value < min || value > max) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（延迟构建消息）
+     *
+     * @param value           待校验数值
+     * @param min             最小值（含）
+     * @param max             最大值（含）
+     * @param messageSupplier 错误消息提供者，仅在断言失败时调用
+     * @return 原数值
+     */
+    public static long isBetween(long value, long min, long max, Supplier<String> messageSupplier) {
+        if (value < min || value > max) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（延迟构建消息 + 占位符）
+     *
+     * @param value           待校验数值
+     * @param min             最小值（含）
+     * @param max             最大值（含）
+     * @param messageSupplier 错误消息模板提供者，支持 {} 占位符
+     * @param args            占位符参数
+     * @return 原数值
+     */
+    public static long isBetween(long value, long min, long max, Supplier<String> messageSupplier, Object... args) {
+        if (value < min || value > max) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（带错误码）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param code    错误码
+     * @param message 错误消息
+     * @return 原数值
+     */
+    public static long isBetween(long value, long min, long max, int code, String message) {
+        if (value < min || value > max) {
+            throw newException(code, message);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（带错误码 + 占位符消息）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {} 占位符
+     * @param args    占位符参数
+     * @return 原数值
+     */
+    public static long isBetween(long value, long min, long max, int code, String message, Object... args) {
+        if (value < min || value > max) {
+            throw newException(code, formatMessage(message, args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（错误枚举）
+     *
+     * @param value     待校验数值
+     * @param min       最小值（含）
+     * @param max       最大值（含）
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @return 原数值
+     */
     public static long isBetween(long value, long min, long max, IErrorCode errorCode) {
         if (value < min || value > max) {
             throw newException(errorCode.getCode(), errorCode.getMessage());
@@ -4124,20 +4565,604 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值在范围内 — label 机制
+     * 断言数值在指定范围内（闭区间 [min, max]）（错误枚举 + 占位符参数）
+     *
+     * @param value     待校验数值
+     * @param min       最小值（含）
+     * @param max       最大值（含）
+     * @param errorCode 错误枚举，消息模板支持 {} 占位符
+     * @param args      占位符参数
+     * @return 原数值
      */
-    public static int isBetweenAs(int value, int min, int max, String label) {
+    public static long isBetween(long value, long min, long max, IErrorCode errorCode, Object... args) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED,
-                    label + " must be between " + min + " and " + max + ", but was " + value);
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
         }
         return value;
     }
 
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 默认消息）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @return 原数值
+     */
+    public static long isBetween(long value, long min, long max, ExceptionFactory factory) {
+        if (value < min || value > max) {
+            throw newException(ErrorCodes.UNSPECIFIED, "value must be between " + min + " and " + max + ", but was " + value, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param message 错误消息
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @return 原数值
+     */
+    public static long isBetween(long value, long min, long max, String message, ExceptionFactory factory) {
+        if (value < min || value > max) {
+            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 占位符参数）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param message 错误消息模板，支持 {} 占位符
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @param args    占位符参数
+     * @return 原数值
+     */
+    public static long isBetween(long value, long min, long max, String message, ExceptionFactory factory, Object... args) {
+        if (value < min || value > max) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 带错误码）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @return 原数值
+     */
+    public static long isBetween(long value, long min, long max, int code, String message, ExceptionFactory factory) {
+        if (value < min || value > max) {
+            throw newException(code, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 带错误码 + 占位符消息）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {} 占位符
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @param args    占位符参数
+     * @return 原数值
+     */
+    public static long isBetween(long value, long min, long max, int code, String message, ExceptionFactory factory, Object... args) {
+        if (value < min || value > max) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 错误枚举）
+     *
+     * @param value     待校验数值
+     * @param min       最小值（含）
+     * @param max       最大值（含）
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于创建自定义异常类型
+     * @return 原数值
+     */
+    public static long isBetween(long value, long min, long max, IErrorCode errorCode, ExceptionFactory factory) {
+        if (value < min || value > max) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 错误枚举 + 占位符参数）
+     *
+     * @param value     待校验数值
+     * @param min       最小值（含）
+     * @param max       最大值（含）
+     * @param errorCode 错误枚举，消息模板支持 {} 占位符
+     * @param factory   异常工厂，用于创建自定义异常类型
+     * @param args      占位符参数
+     * @return 原数值
+     */
+    public static long isBetween(long value, long min, long max, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (value < min || value > max) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（直接传入异常实例）
+     *
+     * @param value             待校验数值
+     * @param min               最小值（含）
+     * @param max               最大值（含）
+     * @param exceptionSupplier 异常提供者，仅在断言失败时调用
+     * @return 原数值
+     */
+    public static long isBetweenOrThrow(long value, long min, long max, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (value < min || value > max) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（label 机制）
+     *
+     * @param value 待校验数值
+     * @param min   最小值（含）
+     * @param max   最大值（含）
+     * @param label 字段/参数标签，用于生成语义化错误消息，如 "timestamp must be between 0 and 9999999999"
+     * @return 原数值
+     */
     public static long isBetweenAs(long value, long min, long max, String label) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED,
-                    label + " must be between " + min + " and " + max + ", but was " + value);
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be between " + min + " and " + max + ", but was " + value);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（label 机制 + 带错误码）
+     *
+     * @param value 待校验数值
+     * @param min   最小值（含）
+     * @param max   最大值（含）
+     * @param code  错误码
+     * @param label 字段/参数标签，用于生成语义化错误消息
+     * @return 原数值
+     */
+    public static long isBetweenAs(long value, long min, long max, int code, String label) {
+        if (value < min || value > max) {
+            throw newException(code, label + " must be between " + min + " and " + max + ", but was " + value);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（label 机制 + 指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param label   字段/参数标签，用于生成语义化错误消息
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @return 原数值
+     */
+    public static long isBetweenAs(long value, long min, long max, String label, ExceptionFactory factory) {
+        if (value < min || value > max) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be between " + min + " and " + max + ", but was " + value, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（label 机制 + 错误码 + 指定异常工厂）
+     *
+     * @param value   待校验数值
+     * @param min     最小值（含）
+     * @param max     最大值（含）
+     * @param code    错误码
+     * @param label   字段/参数标签，用于生成语义化错误消息
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @return 原数值
+     */
+    public static long isBetweenAs(long value, long min, long max, int code, String label, ExceptionFactory factory) {
+        if (value < min || value > max) {
+            throw newException(code, label + " must be between " + min + " and " + max + ", but was " + value, factory);
+        }
+        return value;
+    }
+
+
+    // ===================== 泛型 Number 类型 =====================
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）
+     * <p>使用 {@link Comparable#compareTo} 进行比较，适用于 {@link Integer}、{@link Long}、
+     * {@link Double}、{@link java.math.BigDecimal} 等所有实现了 {@link Comparable} 的 {@link Number} 子类。</p>
+     *
+     * @param value 待校验数值，不可为 null
+     * @param min   最小值（含），不可为 null
+     * @param max   最大值（含），不可为 null
+     * @param <T>   数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max) {
+        return isBetween(value, min, max, "value must be between " + min + " and " + max + ", but was " + value);
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）
+     *
+     * @param value   待校验数值，不可为 null
+     * @param min     最小值（含），不可为 null
+     * @param max     最大值（含），不可为 null
+     * @param message 错误消息
+     * @param <T>     数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, String message) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, message);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（占位符消息）
+     *
+     * @param value   待校验数值，不可为 null
+     * @param min     最小值（含），不可为 null
+     * @param max     最大值（含），不可为 null
+     * @param message 错误消息模板，支持 {} 占位符
+     * @param args    占位符参数
+     * @param <T>     数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, String message, Object... args) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（延迟构建消息）
+     *
+     * @param value           待校验数值，不可为 null
+     * @param min             最小值（含），不可为 null
+     * @param max             最大值（含），不可为 null
+     * @param messageSupplier 错误消息提供者，仅在断言失败时调用
+     * @param <T>             数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, Supplier<String> messageSupplier) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（延迟构建消息 + 占位符）
+     *
+     * @param value           待校验数值，不可为 null
+     * @param min             最小值（含），不可为 null
+     * @param max             最大值（含），不可为 null
+     * @param messageSupplier 错误消息模板提供者，支持 {} 占位符
+     * @param args            占位符参数
+     * @param <T>             数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, Supplier<String> messageSupplier, Object... args) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（带错误码）
+     *
+     * @param value   待校验数值，不可为 null
+     * @param min     最小值（含），不可为 null
+     * @param max     最大值（含），不可为 null
+     * @param code    错误码
+     * @param message 错误消息
+     * @param <T>     数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, int code, String message) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(code, message);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（带错误码 + 占位符消息）
+     *
+     * @param value   待校验数值，不可为 null
+     * @param min     最小值（含），不可为 null
+     * @param max     最大值（含），不可为 null
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {} 占位符
+     * @param args    占位符参数
+     * @param <T>     数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, int code, String message, Object... args) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(code, formatMessage(message, args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（错误枚举）
+     *
+     * @param value     待校验数值，不可为 null
+     * @param min       最小值（含），不可为 null
+     * @param max       最大值（含），不可为 null
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param <T>       数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, IErrorCode errorCode) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(errorCode.getCode(), errorCode.getMessage());
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（错误枚举 + 占位符参数）
+     *
+     * @param value     待校验数值，不可为 null
+     * @param min       最小值（含），不可为 null
+     * @param max       最大值（含），不可为 null
+     * @param errorCode 错误枚举，消息模板支持 {} 占位符
+     * @param args      占位符参数
+     * @param <T>       数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, IErrorCode errorCode, Object... args) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 默认消息）
+     *
+     * @param value   待校验数值，不可为 null
+     * @param min     最小值（含），不可为 null
+     * @param max     最大值（含），不可为 null
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @param <T>     数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, ExceptionFactory factory) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, "value must be between " + min + " and " + max + ", but was " + value, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂）
+     *
+     * @param value   待校验数值，不可为 null
+     * @param min     最小值（含），不可为 null
+     * @param max     最大值（含），不可为 null
+     * @param message 错误消息
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @param <T>     数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, String message, ExceptionFactory factory) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 占位符参数）
+     *
+     * @param value   待校验数值，不可为 null
+     * @param min     最小值（含），不可为 null
+     * @param max     最大值（含），不可为 null
+     * @param message 错误消息模板，支持 {} 占位符
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @param args    占位符参数
+     * @param <T>     数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, String message, ExceptionFactory factory, Object... args) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 带错误码）
+     *
+     * @param value   待校验数值，不可为 null
+     * @param min     最小值（含），不可为 null
+     * @param max     最大值（含），不可为 null
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @param <T>     数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, int code, String message, ExceptionFactory factory) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(code, message, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 带错误码 + 占位符消息）
+     *
+     * @param value   待校验数值，不可为 null
+     * @param min     最小值（含），不可为 null
+     * @param max     最大值（含），不可为 null
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {} 占位符
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @param args    占位符参数
+     * @param <T>     数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, int code, String message, ExceptionFactory factory, Object... args) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 错误枚举）
+     *
+     * @param value     待校验数值，不可为 null
+     * @param min       最小值（含），不可为 null
+     * @param max       最大值（含），不可为 null
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于创建自定义异常类型
+     * @param <T>       数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, IErrorCode errorCode, ExceptionFactory factory) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（指定异常工厂 + 错误枚举 + 占位符参数）
+     *
+     * @param value     待校验数值，不可为 null
+     * @param min       最小值（含），不可为 null
+     * @param max       最大值（含），不可为 null
+     * @param errorCode 错误枚举，消息模板支持 {} 占位符
+     * @param factory   异常工厂，用于创建自定义异常类型
+     * @param args      占位符参数
+     * @param <T>       数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（直接传入异常实例）
+     *
+     * @param value             待校验数值，不可为 null
+     * @param min               最小值（含），不可为 null
+     * @param max               最大值（含），不可为 null
+     * @param exceptionSupplier 异常提供者，仅在断言失败时调用
+     * @param <T>               数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetweenOrThrow(T value, T min, T max, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（label 机制）
+     *
+     * @param value 待校验数值，不可为 null
+     * @param min   最小值（含），不可为 null
+     * @param max   最大值（含），不可为 null
+     * @param label 字段/参数标签，用于生成语义化错误消息，如 "score must be between 0.0 and 100.0"
+     * @param <T>   数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetweenAs(T value, T min, T max, String label) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be between " + min + " and " + max + ", but was " + value);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（label 机制 + 带错误码）
+     *
+     * @param value 待校验数值，不可为 null
+     * @param min   最小值（含），不可为 null
+     * @param max   最大值（含），不可为 null
+     * @param code  错误码
+     * @param label 字段/参数标签，用于生成语义化错误消息
+     * @param <T>   数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetweenAs(T value, T min, T max, int code, String label) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(code, label + " must be between " + min + " and " + max + ", but was " + value);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（label 机制 + 指定异常工厂）
+     *
+     * @param value   待校验数值，不可为 null
+     * @param min     最小值（含），不可为 null
+     * @param max     最大值（含），不可为 null
+     * @param label   字段/参数标签，用于生成语义化错误消息
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @param <T>     数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetweenAs(T value, T min, T max, String label, ExceptionFactory factory) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " must be between " + min + " and " + max + ", but was " + value, factory);
+        }
+        return value;
+    }
+
+    /**
+     * 断言数值在指定范围内（闭区间 [min, max]）（label 机制 + 错误码 + 指定异常工厂）
+     *
+     * @param value   待校验数值，不可为 null
+     * @param min     最小值（含），不可为 null
+     * @param max     最大值（含），不可为 null
+     * @param code    错误码
+     * @param label   字段/参数标签，用于生成语义化错误消息
+     * @param factory 异常工厂，用于创建自定义异常类型
+     * @param <T>     数值类型，须同时继承 {@link Number} 并实现 {@link Comparable}
+     * @return 原数值
+     */
+    public static <T extends Number & Comparable<T>> T isBetweenAs(T value, T min, T max, int code, String label, ExceptionFactory factory) {
+        if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+            throw newException(code, label + " must be between " + min + " and " + max + ", but was " + value, factory);
         }
         return value;
     }
@@ -4401,8 +5426,16 @@ public final class BizAssert {
         throw newException(ErrorCodes.UNSPECIFIED, message);
     }
 
+    public static <T> T fail(String message, Object... args) {
+        throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+    }
+
     public static <T> T fail(int code, String message) {
         throw newException(code, message);
+    }
+
+    public static <T> T fail(int code, String message, Object... args) {
+        throw newException(code, formatMessage(message, args));
     }
 
     public static <T> T fail(IErrorCode errorCode) {
@@ -4415,6 +5448,18 @@ public final class BizAssert {
 
     public static <T> T fail(String message, ExceptionFactory factory) {
         throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+    }
+
+    public static <T> T fail(String message, ExceptionFactory factory, Object... args) {
+        throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+    }
+
+    public static <T> T fail(int code, String message, ExceptionFactory factory) {
+        throw newException(code, message, factory);
+    }
+
+    public static <T> T fail(int code, String message, ExceptionFactory factory, Object... args) {
+        throw newException(code, formatMessage(message, args), factory);
     }
 
     // ========================================================================
