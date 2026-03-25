@@ -9,7 +9,6 @@ import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 /**
@@ -5325,7 +5324,7 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String matches(String text, String regex, ExceptionFactory factory) {
-        notNull(text, "text must match regex: " + regex, factory);
+        notNull(text, factory);
         if (!text.matches(regex)) {
             throw newException(ErrorCodes.UNSPECIFIED, "text must match regex: " + regex, factory);
         }
@@ -5360,7 +5359,7 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String matches(String text, String regex, String message, ExceptionFactory factory, Object... args) {
-        notNull(text, formatMessage(message, args), factory);
+        notNull(text, message, factory, args);
         if (!text.matches(regex)) {
             throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
         }
@@ -5378,7 +5377,7 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String matches(String text, String regex, int code, String message, ExceptionFactory factory) {
-        notNull(text, message, factory);
+        notNull(text, code, message, factory);
         if (!text.matches(regex)) {
             throw newException(code, message, factory);
         }
@@ -5397,7 +5396,7 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String matches(String text, String regex, int code, String message, ExceptionFactory factory, Object... args) {
-        notNull(text, formatMessage(message, args), factory);
+        notNull(text, code, message, factory, args);
         if (!text.matches(regex)) {
             throw newException(code, formatMessage(message, args), factory);
         }
@@ -5414,7 +5413,7 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String matches(String text, String regex, IErrorCode errorCode, ExceptionFactory factory) {
-        notNull(text, errorCode.getMessage(), factory);
+        notNull(text, errorCode, factory);
         if (!text.matches(regex)) {
             throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
         }
@@ -5432,7 +5431,7 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String matches(String text, String regex, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
-        notNull(text, formatMessage(errorCode.getMessage(), args), factory);
+        notNull(text, errorCode, factory, args);
         if (!text.matches(regex)) {
             throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
         }
@@ -5463,7 +5462,7 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String matchesAs(String text, String regex, String label) {
-        notNull(text, label + " must not be null");
+        notNullAs(text, label);
         if (!text.matches(regex)) {
             throw newException(ErrorCodes.UNSPECIFIED, label + " must match regex: " + regex);
         }
@@ -5480,7 +5479,7 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String matchesAs(String text, String regex, int code, String label) {
-        notNull(text, label + " must not be null");
+        notNullAs(text, code, label);
         if (!text.matches(regex)) {
             throw newException(code, label + " must match regex: " + regex);
         }
@@ -5497,7 +5496,7 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String matchesAs(String text, String regex, String label, ExceptionFactory factory) {
-        notNull(text, label + " must not be null", factory);
+        notNullAs(text, label, factory);
         if (!text.matches(regex)) {
             throw newException(ErrorCodes.UNSPECIFIED, label + " must match regex: " + regex, factory);
         }
@@ -5515,7 +5514,7 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String matchesAs(String text, String regex, int code, String label, ExceptionFactory factory) {
-        notNull(text, label + " must not be null", factory);
+        notNullAs(text, label, factory);
         if (!text.matches(regex)) {
             throw newException(code, label + " must match regex: " + regex, factory);
         }
@@ -5523,9 +5522,9 @@ public final class BizAssert {
     }
 
 
-// ============================================================
-// doesNotContain：断言字符串不包含指定子串
-// ============================================================
+    // ============================================================
+    // doesNotContain：断言字符串不包含指定子串
+    // ============================================================
 
     /**
      * 断言字符串不包含指定子串（默认消息）
@@ -5901,7 +5900,7 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String contains(String text, String substring, String message, Object... args) {
-        notNull(text, formatMessage(message, args));
+        notNull(text, message, args);
         if (substring != null && !text.contains(substring)) {
             throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
         }
@@ -6927,12 +6926,28 @@ public final class BizAssert {
         return text;
     }
 
-    // ========================================================================
-    //  noNullElements — Pass-through
-    // ========================================================================
+    // ======================== noNullElements - Collection ========================
+
+    /**
+     * 断言集合中不含 null 元素（默认消息）
+     *
+     * @param collection 待校验集合
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElements(T collection) {
+        return noNullElements(collection, "collection must not contain null elements");
+    }
 
     /**
      * 断言集合中不含 null 元素
+     *
+     * @param collection 待校验集合
+     * @param message    错误消息
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
      */
     public static <E, T extends Collection<E>> T noNullElements(T collection, String message) {
         notNull(collection, message);
@@ -6945,7 +6960,113 @@ public final class BizAssert {
     }
 
     /**
+     * 断言集合中不含 null 元素（占位符消息）
+     *
+     * @param collection 待校验集合
+     * @param message    错误消息模板（支持占位符）
+     * @param args       占位符参数
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElements(T collection, String message, Object... args) {
+        notNull(collection, message, args);
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合中不含 null 元素（延迟构建消息）
+     *
+     * @param collection      待校验集合
+     * @param messageSupplier 错误消息提供者（延迟求值）
+     * @param <E>             元素类型
+     * @param <T>             集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElements(T collection, Supplier<String> messageSupplier) {
+        notNull(collection, messageSupplier);
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合中不含 null 元素（延迟构建消息 + 占位符参数）
+     *
+     * @param collection      待校验集合
+     * @param messageSupplier 错误消息模板提供者（延迟求值）
+     * @param args            占位符参数
+     * @param <E>             元素类型
+     * @param <T>             集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElements(T collection, Supplier<String> messageSupplier, Object... args) {
+        notNull(collection, messageSupplier, args);
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合中不含 null 元素（带错误码）
+     *
+     * @param collection 待校验集合
+     * @param code       错误码
+     * @param message    错误消息
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElements(T collection, int code, String message) {
+        notNull(collection, code, message);
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(code, message);
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合中不含 null 元素（带错误码 + 占位符消息）
+     *
+     * @param collection 待校验集合
+     * @param code       错误码
+     * @param message    错误消息模板（支持占位符）
+     * @param args       占位符参数
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElements(T collection, int code, String message, Object... args) {
+        notNull(collection, code, message, args);
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(code, formatMessage(message, args));
+            }
+        }
+        return collection;
+    }
+
+    /**
      * 断言集合中不含 null 元素（错误枚举）
+     *
+     * @param collection 待校验集合
+     * @param errorCode  错误枚举
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
      */
     public static <E, T extends Collection<E>> T noNullElements(T collection, IErrorCode errorCode) {
         notNull(collection, errorCode);
@@ -6958,13 +7079,658 @@ public final class BizAssert {
     }
 
     /**
+     * 断言集合中不含 null 元素（错误枚举 + 占位符参数）
+     *
+     * @param collection 待校验集合
+     * @param errorCode  错误枚举
+     * @param args       占位符参数
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElements(T collection, IErrorCode errorCode, Object... args) {
+        notNull(collection, errorCode, args);
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合中不含 null 元素（指定异常工厂 + 默认消息）
+     *
+     * @param collection 待校验集合
+     * @param factory    异常工厂
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElements(T collection, ExceptionFactory factory) {
+        notNull(collection, factory);
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(ErrorCodes.UNSPECIFIED, "collection must not contain null elements", factory);
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合中不含 null 元素（指定异常工厂）
+     *
+     * @param collection 待校验集合
+     * @param message    错误消息
+     * @param factory    异常工厂
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElements(T collection, String message, ExceptionFactory factory) {
+        notNull(collection, message, factory);
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合中不含 null 元素（指定异常工厂 + 占位符参数）
+     *
+     * @param collection 待校验集合
+     * @param message    错误消息模板（支持占位符）
+     * @param factory    异常工厂
+     * @param args       占位符参数
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElements(T collection, String message, ExceptionFactory factory, Object... args) {
+        notNull(collection, message, factory, args);
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合中不含 null 元素（指定异常工厂 + 带错误码）
+     *
+     * @param collection 待校验集合
+     * @param code       错误码
+     * @param message    错误消息
+     * @param factory    异常工厂
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElements(T collection, int code, String message, ExceptionFactory factory) {
+        notNull(collection, code, message, factory);
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(code, message, factory);
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合中不含 null 元素（指定异常工厂 + 带错误码 + 占位符消息）
+     *
+     * @param collection 待校验集合
+     * @param code       错误码
+     * @param message    错误消息模板（支持占位符）
+     * @param factory    异常工厂
+     * @param args       占位符参数
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElements(T collection, int code, String message, ExceptionFactory factory, Object... args) {
+        notNull(collection, code, message, factory, args);
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(code, formatMessage(message, args), factory);
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合中不含 null 元素（指定异常工厂 + 错误枚举）
+     *
+     * @param collection 待校验集合
+     * @param errorCode  错误枚举
+     * @param factory    异常工厂
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElements(T collection, IErrorCode errorCode, ExceptionFactory factory) {
+        notNull(collection, errorCode, factory);
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合中不含 null 元素（指定异常工厂 + 错误枚举 + 占位符参数）
+     *
+     * @param collection 待校验集合
+     * @param errorCode  错误枚举
+     * @param factory    异常工厂
+     * @param args       占位符参数
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElements(T collection, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        notNull(collection, errorCode, factory, args);
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合中不含 null 元素（直接传入异常实例）
+     *
+     * @param collection        待校验集合
+     * @param exceptionSupplier 异常提供者
+     * @param <E>               元素类型
+     * @param <T>               集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElementsOrThrow(T collection, Supplier<? extends RuntimeException> exceptionSupplier) {
+        notNullOrThrow(collection, exceptionSupplier);
+        for (E element : collection) {
+            if (element == null) {
+                throw nullSafeGetException(exceptionSupplier);
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合中不含 null 元素（label 机制）
+     *
+     * @param collection 待校验集合
+     * @param label      字段标签，用于生成友好错误消息（如 "userList"）
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElementsAs(T collection, String label) {
+        notNull(collection, label + " must not be null");
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(ErrorCodes.UNSPECIFIED, label + " must not contain null elements");
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合中不含 null 元素（label 机制 + 带错误码）
+     *
+     * @param collection 待校验集合
+     * @param code       错误码
+     * @param label      字段标签，用于生成友好错误消息
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElementsAs(T collection, int code, String label) {
+        notNull(collection, code, label + " must not be null");
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(code, label + " must not contain null elements");
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合中不含 null 元素（label 机制 + 指定异常工厂）
+     *
+     * @param collection 待校验集合
+     * @param label      字段标签，用于生成友好错误消息
+     * @param factory    异常工厂
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElementsAs(T collection, String label, ExceptionFactory factory) {
+        notNull(collection, label + " must not be null", factory);
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(ErrorCodes.UNSPECIFIED, label + " must not contain null elements", factory);
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * 断言集合中不含 null 元素（label 机制 + 错误码 + 指定异常工厂）
+     *
+     * @param collection 待校验集合
+     * @param code       错误码
+     * @param label      字段标签，用于生成友好错误消息
+     * @param factory    异常工厂
+     * @param <E>        元素类型
+     * @param <T>        集合类型
+     * @return 原集合
+     */
+    public static <E, T extends Collection<E>> T noNullElementsAs(T collection, int code, String label, ExceptionFactory factory) {
+        notNull(collection, code, label + " must not be null", factory);
+        for (E element : collection) {
+            if (element == null) {
+                throw newException(code, label + " must not contain null elements", factory);
+            }
+        }
+        return collection;
+    }
+
+
+// ======================== noNullElements - Array ========================
+
+    /**
+     * 断言数组中不含 null 元素（默认消息）
+     *
+     * @param array 待校验数组
+     * @param <T>   元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElements(T[] array) {
+        return noNullElements(array, "array must not contain null elements");
+    }
+
+    /**
      * 断言数组中不含 null 元素
+     *
+     * @param array   待校验数组
+     * @param message 错误消息
+     * @param <T>     元素类型
+     * @return 原数组
      */
     public static <T> T[] noNullElements(T[] array, String message) {
         notNull(array, message);
         for (T element : array) {
             if (element == null) {
                 throw newException(ErrorCodes.UNSPECIFIED, message);
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（占位符消息）
+     *
+     * @param array   待校验数组
+     * @param message 错误消息模板（支持占位符）
+     * @param args    占位符参数
+     * @param <T>     元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElements(T[] array, String message, Object... args) {
+        notNull(array, message, args);
+        for (T element : array) {
+            if (element == null) {
+                throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（延迟构建消息）
+     *
+     * @param array           待校验数组
+     * @param messageSupplier 错误消息提供者（延迟求值）
+     * @param <T>             元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElements(T[] array, Supplier<String> messageSupplier) {
+        notNull(array, messageSupplier);
+        for (T element : array) {
+            if (element == null) {
+                throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（延迟构建消息 + 占位符参数）
+     *
+     * @param array           待校验数组
+     * @param messageSupplier 错误消息模板提供者（延迟求值）
+     * @param args            占位符参数
+     * @param <T>             元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElements(T[] array, Supplier<String> messageSupplier, Object... args) {
+        notNull(array, messageSupplier, args);
+        for (T element : array) {
+            if (element == null) {
+                throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（带错误码）
+     *
+     * @param array   待校验数组
+     * @param code    错误码
+     * @param message 错误消息
+     * @param <T>     元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElements(T[] array, int code, String message) {
+        notNull(array, code, message);
+        for (T element : array) {
+            if (element == null) {
+                throw newException(code, message);
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（带错误码 + 占位符消息）
+     *
+     * @param array   待校验数组
+     * @param code    错误码
+     * @param message 错误消息模板（支持占位符）
+     * @param args    占位符参数
+     * @param <T>     元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElements(T[] array, int code, String message, Object... args) {
+        notNull(array, code, message, args);
+        for (T element : array) {
+            if (element == null) {
+                throw newException(code, formatMessage(message, args));
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（错误枚举）
+     *
+     * @param array     待校验数组
+     * @param errorCode 错误枚举
+     * @param <T>       元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElements(T[] array, IErrorCode errorCode) {
+        notNull(array, errorCode);
+        for (T element : array) {
+            if (element == null) {
+                throw newException(errorCode.getCode(), errorCode.getMessage());
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（错误枚举 + 占位符参数）
+     *
+     * @param array     待校验数组
+     * @param errorCode 错误枚举
+     * @param args      占位符参数
+     * @param <T>       元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElements(T[] array, IErrorCode errorCode, Object... args) {
+        notNull(array, errorCode, args);
+        for (T element : array) {
+            if (element == null) {
+                throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（指定异常工厂 + 默认消息）
+     *
+     * @param array   待校验数组
+     * @param factory 异常工厂
+     * @param <T>     元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElements(T[] array, ExceptionFactory factory) {
+        notNull(array, factory);
+        for (T element : array) {
+            if (element == null) {
+                throw newException(ErrorCodes.UNSPECIFIED, "array must not contain null elements", factory);
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（指定异常工厂）
+     *
+     * @param array   待校验数组
+     * @param message 错误消息
+     * @param factory 异常工厂
+     * @param <T>     元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElements(T[] array, String message, ExceptionFactory factory) {
+        notNull(array, message, factory);
+        for (T element : array) {
+            if (element == null) {
+                throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（指定异常工厂 + 占位符参数）
+     *
+     * @param array   待校验数组
+     * @param message 错误消息模板（支持占位符）
+     * @param factory 异常工厂
+     * @param args    占位符参数
+     * @param <T>     元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElements(T[] array, String message, ExceptionFactory factory, Object... args) {
+        notNull(array, message, factory, args);
+        for (T element : array) {
+            if (element == null) {
+                throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（指定异常工厂 + 带错误码）
+     *
+     * @param array   待校验数组
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂
+     * @param <T>     元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElements(T[] array, int code, String message, ExceptionFactory factory) {
+        notNull(array, code, message, factory);
+        for (T element : array) {
+            if (element == null) {
+                throw newException(code, message, factory);
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（指定异常工厂 + 带错误码 + 占位符消息）
+     *
+     * @param array   待校验数组
+     * @param code    错误码
+     * @param message 错误消息模板（支持占位符）
+     * @param factory 异常工厂
+     * @param args    占位符参数
+     * @param <T>     元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElements(T[] array, int code, String message, ExceptionFactory factory, Object... args) {
+        notNull(array, code, message, factory, args);
+        for (T element : array) {
+            if (element == null) {
+                throw newException(code, formatMessage(message, args), factory);
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（指定异常工厂 + 错误枚举）
+     *
+     * @param array     待校验数组
+     * @param errorCode 错误枚举
+     * @param factory   异常工厂
+     * @param <T>       元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElements(T[] array, IErrorCode errorCode, ExceptionFactory factory) {
+        notNull(array, errorCode, factory);
+        for (T element : array) {
+            if (element == null) {
+                throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（指定异常工厂 + 错误枚举 + 占位符参数）
+     *
+     * @param array     待校验数组
+     * @param errorCode 错误枚举
+     * @param factory   异常工厂
+     * @param args      占位符参数
+     * @param <T>       元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElements(T[] array, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        notNull(array, errorCode, factory, args);
+        for (T element : array) {
+            if (element == null) {
+                throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（直接传入异常实例）
+     *
+     * @param array             待校验数组
+     * @param exceptionSupplier 异常提供者
+     * @param <T>               元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElementsOrThrow(T[] array, Supplier<? extends RuntimeException> exceptionSupplier) {
+        notNullOrThrow(array, exceptionSupplier);
+        for (T element : array) {
+            if (element == null) {
+                throw nullSafeGetException(exceptionSupplier);
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（label 机制）
+     *
+     * @param array 待校验数组
+     * @param label 字段标签，用于生成友好错误消息（如 "ids"）
+     * @param <T>   元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElementsAs(T[] array, String label) {
+        notNull(array, label + " must not be null");
+        for (T element : array) {
+            if (element == null) {
+                throw newException(ErrorCodes.UNSPECIFIED, label + " must not contain null elements");
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（label 机制 + 带错误码）
+     *
+     * @param array 待校验数组
+     * @param code  错误码
+     * @param label 字段标签，用于生成友好错误消息
+     * @param <T>   元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElementsAs(T[] array, int code, String label) {
+        notNull(array, code, label + " must not be null");
+        for (T element : array) {
+            if (element == null) {
+                throw newException(code, label + " must not contain null elements");
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（label 机制 + 指定异常工厂）
+     *
+     * @param array   待校验数组
+     * @param label   字段标签，用于生成友好错误消息
+     * @param factory 异常工厂
+     * @param <T>     元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElementsAs(T[] array, String label, ExceptionFactory factory) {
+        notNull(array, label + " must not be null", factory);
+        for (T element : array) {
+            if (element == null) {
+                throw newException(ErrorCodes.UNSPECIFIED, label + " must not contain null elements", factory);
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 断言数组中不含 null 元素（label 机制 + 错误码 + 指定异常工厂）
+     *
+     * @param array   待校验数组
+     * @param code    错误码
+     * @param label   字段标签，用于生成友好错误消息
+     * @param factory 异常工厂
+     * @param <T>     元素类型
+     * @return 原数组
+     */
+    public static <T> T[] noNullElementsAs(T[] array, int code, String label, ExceptionFactory factory) {
+        notNull(array, code, label + " must not be null", factory);
+        for (T element : array) {
+            if (element == null) {
+                throw newException(code, label + " must not contain null elements", factory);
             }
         }
         return array;
@@ -6978,14 +7744,20 @@ public final class BizAssert {
      * 断言状态条件为 true
      * <p>语义上用于校验对象状态，与 isTrue（参数校验）区分</p>
      */
+    public static void state(boolean expression) {
+        state(expression, "state check failed");
+    }
+
     public static void state(boolean expression, String message) {
         if (!expression) {
             throw newException(ErrorCodes.UNSPECIFIED, message);
         }
     }
 
-    public static void state(boolean expression) {
-        state(expression, "state check failed");
+    public static void state(boolean expression, String message, Object... args) {
+        if (!expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        }
     }
 
     public static void state(boolean expression, Supplier<String> messageSupplier) {
@@ -6994,9 +7766,21 @@ public final class BizAssert {
         }
     }
 
+    public static void state(boolean expression, Supplier<String> messageSupplier, Object... args) {
+        if (!expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        }
+    }
+
     public static void state(boolean expression, int code, String message) {
         if (!expression) {
             throw newException(code, message);
+        }
+    }
+
+    public static void state(boolean expression, int code, String message, Object... args) {
+        if (!expression) {
+            throw newException(code, formatMessage(message, args));
         }
     }
 
@@ -7012,15 +7796,75 @@ public final class BizAssert {
         }
     }
 
+    public static void state(boolean expression, ExceptionFactory factory) {
+        if (!expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, "state check failed", factory);
+        }
+    }
+
     public static void state(boolean expression, String message, ExceptionFactory factory) {
         if (!expression) {
             throw newException(ErrorCodes.UNSPECIFIED, message, factory);
         }
     }
 
+    public static void state(boolean expression, String message, ExceptionFactory factory, Object... args) {
+        if (!expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        }
+    }
+
+    public static void state(boolean expression, int code, String message, ExceptionFactory factory) {
+        if (!expression) {
+            throw newException(code, message, factory);
+        }
+    }
+
+    public static void state(boolean expression, int code, String message, ExceptionFactory factory, Object... args) {
+        if (!expression) {
+            throw newException(code, formatMessage(message, args), factory);
+        }
+    }
+
+    public static void state(boolean expression, IErrorCode errorCode, ExceptionFactory factory) {
+        if (!expression) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+    }
+
+    public static void state(boolean expression, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (!expression) {
+            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+        }
+    }
+
     public static void stateOrThrow(boolean expression, Supplier<? extends RuntimeException> exceptionSupplier) {
         if (!expression) {
             throw nullSafeGetException(exceptionSupplier);
+        }
+    }
+
+    public static void stateAs(boolean expression, String label) {
+        if (!expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " check failed");
+        }
+    }
+
+    public static void stateAs(boolean expression, int code, String label) {
+        if (!expression) {
+            throw newException(code, label + " check failed");
+        }
+    }
+
+    public static void stateAs(boolean expression, String label, ExceptionFactory factory) {
+        if (!expression) {
+            throw newException(ErrorCodes.UNSPECIFIED, label + " check failed", factory);
+        }
+    }
+
+    public static void stateAs(boolean expression, int code, String label, ExceptionFactory factory) {
+        if (!expression) {
+            throw newException(code, label + " check failed", factory);
         }
     }
 
