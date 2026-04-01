@@ -13,12 +13,11 @@ Inspired by Spring's `org.springframework.util.Assert`, **BizAssert** is purpose
 - 🎯 **Business-Oriented** — Throws `BizException` with error code by default, not `IllegalArgumentException`
 - 🔌 **Pluggable Exception Factory** — Replace the global default exception, or specify per-call
 - 🏷️ **Label Mechanism** — Avoid repetitive boilerplate messages (`notNullAs(userId, "userId")`)
-- 📝 **Placeholder Messages** — `{0}`, `{1}` style message formatting (`MessageFormat`)
+- 📝 **Placeholder Messages** — `{}`, `{}` style message formatting (`MessageFormat`)
 - 📋 **Error Code Enum Support** — First-class support for `IErrorCode` enums
 - ↩️ **Pass-through Return Values** — `notNull`, `notEmpty`, `notBlank`, numeric assertions return the validated value
 - 🧩 **Rich Assertion Methods** — Boolean, null, string, collection, map, array, numeric, pattern, equality, and more
 - ⚡ **Zero Dependencies** — Pure Java, no third-party libraries required
-- 🔒 **Thread-Safe** — Global factory uses `AtomicReference`, one-time configuration guard
 
 ---
 
@@ -62,36 +61,12 @@ BizAssert.notNull(userId, BizError.USER_NOT_NULL);
 BizAssert.notNullAs(userId, "userId");
 
 // Placeholder
-BizAssert.notNull(userId, "{0} must not be null", "userId");
+BizAssert.notNull(userId, "{} must not be null", "userId");
 ```
 
 ---
 
 ## 📖 Detailed Usage
-
-### Table of Contents
-
-- [1. Global Exception Factory](#1-global-exception-factory)
-- [2. Message Styles](#2-message-styles)
-- [3. Custom Exception Per Call](#3-custom-exception-per-call)
-- [4. Pass-through Return Values](#4-pass-through-return-values)
-- [5. Boolean Assertions](#5-boolean-assertions)
-- [6. Null Assertions](#6-null-assertions)
-- [7. String Assertions](#7-string-assertions)
-- [8. Collection Assertions](#8-collection-assertions)
-- [9. Map Assertions](#9-map-assertions)
-- [10. Array Assertions](#10-array-assertions)
-- [11. Equality Assertions](#11-equality-assertions)
-- [12. Numeric Assertions](#12-numeric-assertions)
-- [13. Pattern Matching](#13-pattern-matching)
-- [14. String Contains / Prefix / Suffix](#14-string-contains--prefix--suffix)
-- [15. No Null Elements](#15-no-null-elements)
-- [16. State Assertions](#16-state-assertions)
-- [17. Fail (Unreachable Branches)](#17-fail-unreachable-branches)
-- [18. Error Code Enum](#18-error-code-enum)
-- [19. Complete Method Reference](#19-complete-method-reference)
-
----
 
 ### 1. Global Exception Factory
 
@@ -141,8 +116,8 @@ BizAssert.notNull(userId, "userId must not be null");
 BizAssert.notNull(userId, 10001, "userId must not be null");
 // → code=10001, "userId must not be null"
 
-// ④ Placeholder message ({0}, {1}, ...)
-BizAssert.notNull(userId, "{0} must not be null", "userId");
+// ④ Placeholder message ({}, {}, ...)
+BizAssert.notNull(userId, "{} must not be null", "userId");
 // → "userId must not be null"
 
 // ⑤ Lazy message (Supplier, evaluated only on failure)
@@ -163,7 +138,7 @@ For the common pattern `"xxx must not be null"`, use the `xxxAs` shorthand:
 
 ```java
 // Instead of writing:
-BizAssert.notNull(userId, "{0} must not be null", "userId");
+BizAssert.notNull(userId, "{} must not be null", "userId");
 
 // Just write:
 BizAssert.notNullAs(userId, "userId");
@@ -180,7 +155,7 @@ BizAssert.isPositiveAs(age, "age");    // → "age must be positive"
 When a placeholder argument is `null`, it displays as `<null>`:
 
 ```java
-BizAssert.isTrue(false, "{0} is invalid", (Object) null);
+BizAssert.isTrue(false, "{} is invalid", (Object) null);
 // → "<null> is invalid"
 ```
 
@@ -460,9 +435,9 @@ Define your business error codes by implementing `IErrorCode`:
 public enum BizError implements IErrorCode {
 
     USER_NOT_NULL(10001, "user must not be null"),
-    USER_IS_NULL(10002, "{0} is null"),
-    PARAM_INVALID(10003, "{0} is invalid"),
-    ORDER_NOT_PAID(20001, "Order {0} is not paid"),
+    USER_IS_NULL(10002, "{} is null"),
+    PARAM_INVALID(10003, "{} is invalid"),
+    ORDER_NOT_PAID(20001, "Order {} is not paid"),
     ;
 
     private final int code;
@@ -558,7 +533,7 @@ BizAssert.isTrue(order.isPaid(), BizError.ORDER_NOT_PAID, order.getId());
 │  ├── Default message (no args)                      │
 │  ├── String message                                 │
 │  ├── int code + String message                      │
-│  ├── String pattern + Object... args ({0} style)    │
+│  ├── String pattern + Object... args ({} style)    │
 │  ├── Supplier<String> (lazy evaluation)             │
 │  ├── IErrorCode (error enum)                        │
 │  ├── IErrorCode + Object... args                    │

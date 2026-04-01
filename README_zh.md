@@ -11,12 +11,11 @@
 - 🎯 **面向业务** — 默认抛出带错误码的 `BizException`，而非 `IllegalArgumentException`
 - 🔌 **可插拔异常工厂** — 支持全局替换默认异常类型，也支持单次调用指定异常
 - 🏷️ **Label 机制** — 避免重复编写完整错误消息（`notNullAs(userId, "userId")`）
-- 📝 **占位符消息** — 支持 `{0}`, `{1}` 风格的消息格式化（`MessageFormat`）
+- 📝 **占位符消息** — 支持 `{}`, `{}` 风格的消息格式化
 - 📋 **错误码枚举** — 一等支持 `IErrorCode` 错误码枚举
 - ↩️ **Pass-through 返回值** — `notNull`、`notEmpty`、`notBlank`、数值断言直接返回校验后的值
 - 🧩 **丰富的断言方法** — 覆盖布尔、空值、字符串、集合、Map、数组、数值、正则、相等性等
 - ⚡ **零依赖** — 纯 Java 实现，无任何第三方依赖
-- 🔒 **线程安全** — 全局工厂使用 `AtomicReference`，仅允许配置一次
 
 ---
 
@@ -60,36 +59,12 @@ BizAssert.notNull(userId, BizError.USER_NOT_NULL);
 BizAssert.notNullAs(userId, "userId");
 
 // 占位符
-BizAssert.notNull(userId, "{0} 不能为空", "userId");
+BizAssert.notNull(userId, "{} 不能为空", "userId");
 ```
 
 ---
 
 ## 📖 详细使用说明
-
-### 目录
-
-- [1. 全局异常工厂配置](#1-全局异常工厂配置)
-- [2. 消息风格](#2-消息风格)
-- [3. 单次调用指定自定义异常](#3-单次调用指定自定义异常)
-- [4. Pass-through 返回值](#4-pass-through-返回值)
-- [5. 布尔断言](#5-布尔断言)
-- [6. 空值断言](#6-空值断言)
-- [7. 字符串断言](#7-字符串断言)
-- [8. 集合断言](#8-集合断言)
-- [9. Map 断言](#9-map-断言)
-- [10. 数组断言](#10-数组断言)
-- [11. 相等性断言](#11-相等性断言)
-- [12. 数值断言](#12-数值断言)
-- [13. 正则匹配](#13-正则匹配)
-- [14. 字符串包含/前缀/后缀](#14-字符串包含前缀后缀)
-- [15. 无 null 元素](#15-无-null-元素)
-- [16. 状态断言](#16-状态断言)
-- [17. Fail（不可达分支）](#17-fail不可达分支)
-- [18. 错误码枚举](#18-错误码枚举)
-- [19. 完整方法速查表](#19-完整方法速查表)
-
----
 
 ### 1. 全局异常工厂配置
 
@@ -139,8 +114,8 @@ BizAssert.notNull(userId, "userId 不能为空");
 BizAssert.notNull(userId, 10001, "userId 不能为空");
 // → code=10001, "userId 不能为空"
 
-// ④ 占位符消息（{0}, {1}, ...）
-BizAssert.notNull(userId, "{0} 不能为空", "userId");
+// ④ 占位符消息（{}, {}, ...）
+BizAssert.notNull(userId, "{} 不能为空", "userId");
 // → "userId 不能为空"
 
 // ⑤ 延迟消息（Supplier，仅在失败时求值）
@@ -161,7 +136,7 @@ BizAssert.notNull(userId, BizError.PARAM_INVALID, "userId");
 
 ```java
 // 传统写法：
-BizAssert.notNull(userId, "{0} must not be null", "userId");
+BizAssert.notNull(userId, "{} must not be null", "userId");
 
 // Label 简写：
 BizAssert.notNullAs(userId, "userId");
@@ -178,7 +153,7 @@ BizAssert.isPositiveAs(age, "age");    // → "age must be positive"
 占位符参数为 `null` 时，展示为 `<null>`：
 
 ```java
-BizAssert.isTrue(false, "{0} is invalid", (Object) null);
+BizAssert.isTrue(false, "{} is invalid", (Object) null);
 // → "<null> is invalid"
 ```
 
@@ -458,9 +433,9 @@ return BizAssert.fail("致命错误", ExceptionFactory.ofMessage(FatalException:
 public enum BizError implements IErrorCode {
 
     USER_NOT_NULL(10001, "user must not be null"),
-    USER_IS_NULL(10002, "{0} is null"),
-    PARAM_INVALID(10003, "{0} is invalid"),
-    ORDER_NOT_PAID(20001, "订单 {0} 未支付"),
+    USER_IS_NULL(10002, "{} is null"),
+    PARAM_INVALID(10003, "{} is invalid"),
+    ORDER_NOT_PAID(20001, "订单 {} 未支付"),
     ;
 
     private final int code;
@@ -556,7 +531,7 @@ BizAssert.isTrue(order.isPaid(), BizError.ORDER_NOT_PAID, order.getId());
 │  ├── 默认消息（无参）                               │
 │  ├── String message                                 │
 │  ├── int code + String message                      │
-│  ├── String pattern + Object... args（{0} 占位符）  │
+│  ├── String pattern + Object... args（{} 占位符）  │
 │  ├── Supplier<String>（延迟求值）                   │
 │  ├── IErrorCode（错误枚举）                         │
 │  ├── IErrorCode + Object... args                    │
