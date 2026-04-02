@@ -4631,7 +4631,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, String message) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(message);
         }
         return value;
@@ -4648,7 +4648,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, String message, Object... args) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(formatMessage(message, args));
         }
         return value;
@@ -4664,7 +4664,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, Supplier<String> messageSupplier) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(nullSafeGet(messageSupplier));
         }
         return value;
@@ -4681,7 +4681,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, Supplier<String> messageSupplier, Object... args) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return value;
@@ -4698,7 +4698,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, int code, String message) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(code, message);
         }
         return value;
@@ -4716,7 +4716,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, int code, String message, Object... args) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(code, formatMessage(message, args));
         }
         return value;
@@ -4732,7 +4732,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, IErrorCode errorCode) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(errorCode.getCode(), errorCode.getMessage());
         }
         return value;
@@ -4749,7 +4749,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, IErrorCode errorCode, Object... args) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
         }
         return value;
@@ -4779,7 +4779,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, String message, ExceptionFactory factory) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(message, factory);
         }
         return value;
@@ -4797,7 +4797,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, String message, ExceptionFactory factory, Object... args) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(formatMessage(message, args), factory);
         }
         return value;
@@ -4816,7 +4816,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, int code, String message, ExceptionFactory factory) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(code, message, factory);
         }
         return value;
@@ -4835,7 +4835,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, int code, String message, ExceptionFactory factory, Object... args) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(code, formatMessage(message, args), factory);
         }
         return value;
@@ -4852,7 +4852,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, IErrorCode errorCode, ExceptionFactory factory) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
         }
         return value;
@@ -4870,7 +4870,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
         }
         return value;
@@ -4886,7 +4886,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}，抛出由 exceptionSupplier 提供的异常
      */
     public static <T extends Number> T isPositiveOrThrow(T value, Supplier<? extends RuntimeException> exceptionSupplier) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw nullSafeGetException(exceptionSupplier);
         }
         return value;
@@ -4903,7 +4903,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositiveAs(T value, String label) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(label + " must be positive");
         }
         return value;
@@ -4920,7 +4920,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositiveAs(T value, int code, String label) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(code, label + " must be positive");
         }
         return value;
@@ -4937,7 +4937,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositiveAs(T value, String label, ExceptionFactory factory) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(label + " must be positive", factory);
         }
         return value;
@@ -4955,7 +4955,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositiveAs(T value, int code, String label, ExceptionFactory factory) {
-        if (value == null || !isPositiveNumber(value)) {
+        if (!isPositiveNumber(value)) {
             throw newException(code, label + " must be positive", factory);
         }
         return value;
@@ -5657,7 +5657,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, String message) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(message);
         }
         return value;
@@ -5674,7 +5674,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, String message, Object... args) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(formatMessage(message, args));
         }
         return value;
@@ -5690,7 +5690,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, Supplier<String> messageSupplier) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(nullSafeGet(messageSupplier));
         }
         return value;
@@ -5707,7 +5707,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, Supplier<String> messageSupplier, Object... args) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return value;
@@ -5724,7 +5724,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, int code, String message) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(code, message);
         }
         return value;
@@ -5742,7 +5742,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, int code, String message, Object... args) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(code, formatMessage(message, args));
         }
         return value;
@@ -5758,7 +5758,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, IErrorCode errorCode) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(errorCode.getCode(), errorCode.getMessage());
         }
         return value;
@@ -5775,7 +5775,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, IErrorCode errorCode, Object... args) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
         }
         return value;
@@ -5791,10 +5791,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, ExceptionFactory factory) {
-        if (value == null || !isNonNegativeNumber(value)) {
-            throw newException("value must be non-negative", factory);
-        }
-        return value;
+        return isNonNegative(value, "value must be non-negative", factory);
     }
 
     /**
@@ -5808,7 +5805,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, String message, ExceptionFactory factory) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(message, factory);
         }
         return value;
@@ -5826,7 +5823,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, String message, ExceptionFactory factory, Object... args) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(formatMessage(message, args), factory);
         }
         return value;
@@ -5844,7 +5841,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, int code, String message, ExceptionFactory factory) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(code, message, factory);
         }
         return value;
@@ -5863,7 +5860,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, int code, String message, ExceptionFactory factory, Object... args) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(code, formatMessage(message, args), factory);
         }
         return value;
@@ -5880,7 +5877,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, IErrorCode errorCode, ExceptionFactory factory) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
         }
         return value;
@@ -5898,7 +5895,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
         }
         return value;
@@ -5914,7 +5911,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0，抛出由 exceptionSupplier 提供的异常
      */
     public static <T extends Number> T isNonNegativeOrThrow(T value, Supplier<? extends RuntimeException> exceptionSupplier) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw nullSafeGetException(exceptionSupplier);
         }
         return value;
@@ -5930,7 +5927,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegativeAs(T value, String label) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(label + " must be non-negative");
         }
         return value;
@@ -5947,7 +5944,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegativeAs(T value, int code, String label) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(code, label + " must be non-negative");
         }
         return value;
@@ -5964,7 +5961,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegativeAs(T value, String label, ExceptionFactory factory) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(label + " must be non-negative", factory);
         }
         return value;
@@ -5982,7 +5979,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegativeAs(T value, int code, String label, ExceptionFactory factory) {
-        if (value == null || !isNonNegativeNumber(value)) {
+        if (!isNonNegativeNumber(value)) {
             throw newException(code, label + " must be non-negative", factory);
         }
         return value;
@@ -10064,39 +10061,73 @@ public final class BizAssert {
     // ========================================================================
 
     private static boolean isPositiveNumber(Number value) {
+
+        if (value == null) {
+            return false;
+        }
+
+        if (value instanceof Integer) {
+            return value.intValue() > 0;
+        }
+        if (value instanceof Long) {
+            return value.longValue() > 0;
+        }
+
         // BigDecimal / BigInteger：必须走 compareTo，避免精度丢失
         if (value instanceof BigDecimal) {
             return ((BigDecimal) value).compareTo(BigDecimal.ZERO) > 0;
         }
+
+        if (value instanceof Short) {
+            return value.shortValue() > 0;
+        }
+        if (value instanceof Byte) {
+            return value.byteValue() > 0;
+        }
+
         if (value instanceof BigInteger) {
             return ((BigInteger) value).compareTo(BigInteger.ZERO) > 0;
         }
-        // 整型：longValue() 语义更清晰，且无精度问题
-        if (value instanceof Long || value instanceof Integer
-                || value instanceof Short || value instanceof Byte) {
-            return value.longValue() > 0L;
+
+        if (value instanceof Float) {
+            return value.floatValue() > 0f;
         }
-        // 浮点型：额外防御 NaN 和 Infinity
-        double d = value.doubleValue();
-        return !Double.isNaN(d) && !Double.isInfinite(d) && d > 0.0;
+        return Double.compare(value.doubleValue(), 0d) > 0;
     }
 
     private static boolean isNonNegativeNumber(Number value) {
+
+        if (value == null) {
+            return false;
+        }
+
+        if (value instanceof Integer) {
+            return value.intValue() >= 0;
+        }
+        if (value instanceof Long) {
+            return value.longValue() >= 0;
+        }
+
         // BigDecimal / BigInteger：必须走 compareTo，避免精度丢失
         if (value instanceof BigDecimal) {
             return ((BigDecimal) value).compareTo(BigDecimal.ZERO) > -1;
         }
+
+        if (value instanceof Short) {
+            return value.shortValue() >= 0;
+        }
+        if (value instanceof Byte) {
+            return value.byteValue() >= 0;
+        }
+
         if (value instanceof BigInteger) {
             return ((BigInteger) value).compareTo(BigInteger.ZERO) > -1;
         }
-        // 整型：longValue() 语义更清晰，且无精度问题
-        if (value instanceof Long || value instanceof Integer
-                || value instanceof Short || value instanceof Byte) {
-            return value.longValue() >= 0L;
+
+        if (value instanceof Float) {
+            return value.floatValue() >= 0f;
         }
-        // 浮点型：额外防御 NaN 和 Infinity
-        double d = value.doubleValue();
-        return !Double.isNaN(d) && !Double.isInfinite(d) && d >= 0.0;
+        return Double.compare(value.doubleValue(), 0d) > -1;
     }
 
     /**
