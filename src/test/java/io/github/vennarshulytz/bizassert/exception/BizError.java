@@ -14,8 +14,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public enum BizError implements IErrorCode {
 
     USER_NOT_NULL(10001, "user must not be null"),
-    USER_IS_NULL(10002, "{0} is null"),
-    PARAM_INVALID(10003, "{0} is invalid"),
+    USER_IS_NULL(10002, "{} is null"),
+    PARAM_INVALID(10003, "{} is invalid"),
     ;
 
     private final int code;

@@ -5,7 +5,8 @@ import io.github.vennarshulytz.bizassert.constants.ErrorCodes;
 import io.github.vennarshulytz.bizassert.exception.ExceptionFactory;
 import io.github.vennarshulytz.bizassert.exception.IErrorCode;
 
-import java.text.MessageFormat;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -21,7 +22,7 @@ import java.util.function.Supplier;
  *   <li>全局可配置默认异常工厂（仅允许设置一次）</li>
  *   <li>每次调用可指定自定义异常工厂</li>
  *   <li>支持错误枚举 {@link IErrorCode}</li>
- *   <li>支持 {@code {0}, {1}} 占位符消息</li>
+ *   <li>支持 {@code {}, {}} 占位符消息</li>
  *   <li>支持 label 机制（{@code notNullAs} 系列方法）</li>
  *   <li>支持 Pass-through 返回值（notNull/notEmpty/notBlank 等）</li>
  *   <li>支持直接传入异常实例（{@code isTrueOrThrow} 系列方法）</li>
@@ -113,32 +114,62 @@ public final class BizAssert {
     // ==================== 消息格式化 ====================
 
     /**
-     * 格式化消息，将 {0}, {1}, ... 替换为实际参数值
+     * 格式化消息，将 {}, {}, ... 替换为实际参数值
      * <p>null 参数展示为 {@code <null>}</p>
      */
     private static String formatMessage(String pattern, Object... args) {
-        if (args == null || args.length == 0) {
-            return pattern;
+        if (args == null || args.length == 0) return pattern;
+        StringBuilder sb = new StringBuilder(pattern.length() + 16 * args.length);
+        int pos = 0, argIdx = 0;
+        while (argIdx < args.length) {
+            int idx = pattern.indexOf("{}", pos);
+            if (idx == -1) break;
+            sb.append(pattern, pos, idx)
+                    .append(args[argIdx] != null ? args[argIdx] : "<null>");
+            pos = idx + 2;
+            argIdx++;
         }
-        // 将 null 替换为 "<null>" 展示
-        Object[] safeArgs = new Object[args.length];
-        for (int i = 0; i < args.length; i++) {
-            safeArgs[i] = args[i] != null ? args[i] : "<null>";
-        }
-        return MessageFormat.format(pattern, safeArgs);
+        sb.append(pattern, pos, pattern.length());
+        return sb.toString();
     }
 
     // ==================== 异常抛出 ====================
 
     /**
+     * 使用默认错误码、默认工厂创建并抛出异常
+     * @param message 错误消息
+     * @return RuntimeException
+     */
+    private static RuntimeException newException(String message) {
+        return DEFAULT_FACTORY.create(ErrorCodes.UNSPECIFIED, message);
+    }
+
+    /**
      * 使用默认工厂创建并抛出异常
+     * @param code    错误码
+     * @param message 错误消息
+     * @return RuntimeException
      */
     private static RuntimeException newException(int code, String message) {
         return DEFAULT_FACTORY.create(code, message);
     }
 
     /**
+     * 使用默认错误码、指定工厂创建并抛出异常
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return RuntimeException
+     */
+    private static RuntimeException newException(String message, ExceptionFactory factory) {
+        return factory.create(ErrorCodes.UNSPECIFIED, message);
+    }
+
+    /**
      * 使用指定工厂创建并抛出异常
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return RuntimeException
      */
     private static RuntimeException newException(int code, String message, ExceptionFactory factory) {
         return factory.create(code, message);
@@ -151,53 +182,77 @@ public final class BizAssert {
     // ---------- isTrue ----------
 
     /**
-     * 断言表达式为 true（无消息，使用默认）
+     * 断言表达式为 true（无消息，使用默认消息 "expression must be true"）。
+     *
+     * @param expression 布尔表达式
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrue(boolean expression) {
         isTrue(expression, "expression must be true");
     }
 
     /**
-     * 断言表达式为 true
+     * 断言表达式为 true。
      *
      * @param expression 布尔表达式
-     * @param message    错误消息
+     * @param message    断言失败时的错误消息
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrue(boolean expression, String message) {
         if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
     }
 
     /**
-     * 断言表达式为 true（占位符消息）
+     * 断言表达式为 true（占位符消息）。
+     *
+     * @param expression 布尔表达式
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrue(boolean expression, String message, Object... args) {
         if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
     }
 
     /**
-     * 断言表达式为 true（延迟构建消息）
+     * 断言表达式为 true（延迟构建消息）。
+     * <p>消息仅在断言失败时求值，适用于消息构建代价较高的场景。</p>
+     *
+     * @param expression      布尔表达式
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrue(boolean expression, Supplier<String> messageSupplier) {
         if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
     }
 
     /**
-     * 断言表达式为 true（延迟构建消息 + 占位符参数）
+     * 断言表达式为 true（延迟构建消息 + 占位符参数）。
+     *
+     * @param expression      布尔表达式
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrue(boolean expression, Supplier<String> messageSupplier, Object... args) {
         if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
     }
 
     /**
-     * 断言表达式为 true（带错误码）
+     * 断言表达式为 true（带错误码）。
+     *
+     * @param expression 布尔表达式
+     * @param code       错误码
+     * @param message    错误消息
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrue(boolean expression, int code, String message) {
         if (!expression) {
@@ -206,7 +261,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 true（带错误码 + 占位符参数）
+     * 断言表达式为 true（带错误码 + 占位符参数）。
+     *
+     * @param expression 布尔表达式
+     * @param code       错误码
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrue(boolean expression, int code, String message, Object... args) {
         if (!expression) {
@@ -215,7 +276,11 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 true（错误枚举）
+     * 断言表达式为 true（错误枚举）。
+     *
+     * @param expression 布尔表达式
+     * @param errorCode  错误枚举，包含错误码与错误消息
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrue(boolean expression, IErrorCode errorCode) {
         if (!expression) {
@@ -224,7 +289,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 true（错误枚举 + 占位符参数）
+     * 断言表达式为 true（错误枚举 + 占位符参数）。
+     *
+     * @param expression 布尔表达式
+     * @param errorCode  错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrue(boolean expression, IErrorCode errorCode, Object... args) {
         if (!expression) {
@@ -233,34 +303,55 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 true（指定异常工厂 + 默认消息）
+     * 断言表达式为 true（指定异常工厂 + 默认消息）。
+     *
+     * @param expression 布尔表达式
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrue(boolean expression, ExceptionFactory factory) {
         if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, "expression must be true", factory);
+            throw newException("expression must be true", factory);
         }
     }
 
     /**
-     * 断言表达式为 true（指定异常工厂）
+     * 断言表达式为 true（指定异常工厂）。
+     *
+     * @param expression 布尔表达式
+     * @param message    错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrue(boolean expression, String message, ExceptionFactory factory) {
         if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
     }
 
     /**
-     * 断言表达式为 true（指定异常工厂 + 占位符参数）
+     * 断言表达式为 true（指定异常工厂 + 占位符参数）。
+     *
+     * @param expression 布尔表达式
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrue(boolean expression, String message, ExceptionFactory factory, Object... args) {
         if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
     }
 
     /**
-     * 断言表达式为 true（指定异常工厂 + 错误码）
+     * 断言表达式为 true（指定异常工厂 + 错误码）。
+     *
+     * @param expression 布尔表达式
+     * @param code       错误码
+     * @param message    错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrue(boolean expression, int code, String message, ExceptionFactory factory) {
         if (!expression) {
@@ -269,7 +360,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 true（指定异常工厂 + 错误码 + 占位符参数）
+     * 断言表达式为 true（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param expression 布尔表达式
+     * @param code       错误码
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrue(boolean expression, int code, String message, ExceptionFactory factory, Object... args) {
         if (!expression) {
@@ -278,7 +376,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 true（指定异常工厂 + 错误枚举）
+     * 断言表达式为 true（指定异常工厂 + 错误枚举）。
+     *
+     * @param expression 布尔表达式
+     * @param errorCode  错误枚举，包含错误码与错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrue(boolean expression, IErrorCode errorCode, ExceptionFactory factory) {
         if (!expression) {
@@ -287,7 +390,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 true（指定异常工厂 + 错误枚举 + 占位符参数）
+     * 断言表达式为 true（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param expression 布尔表达式
+     * @param errorCode  错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrue(boolean expression, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (!expression) {
@@ -296,11 +405,15 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 true（直接传入异常实例，由调用方完全控制异常类型和内容）
+     * 断言表达式为 true（直接传入异常实例，由调用方完全控制异常类型和内容）。
      *
      * <pre>{@code
      * BizAssert.isTrueOrThrow(order.isPaid(), () -> new PaymentException("订单未支付"));
      * }</pre>
+     *
+     * @param expression        布尔表达式
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @throws RuntimeException 若表达式为 false，抛出由 exceptionSupplier 提供的异常
      */
     public static void isTrueOrThrow(boolean expression, Supplier<? extends RuntimeException> exceptionSupplier) {
         if (!expression) {
@@ -309,22 +422,31 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 true（label 机制）
+     * 断言表达式为 true（label 机制）。
      * <p>自动生成消息：{label} must be true</p>
      *
      * <pre>{@code
      * BizAssert.isTrueAs(order.isPaid(), "paid");
-     * // 等价于 BizAssert.isTrue(userId, "{0} must be true", "paid");
+     * // 断言失败时消息为："paid must be true"
      * }</pre>
+     *
+     * @param expression 布尔表达式
+     * @param label      字段/参数名称，用于生成语义化错误消息
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrueAs(boolean expression, String label) {
         if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be true");
+            throw newException(label + " must be true");
         }
     }
 
     /**
-     * 断言表达式为 true（label 机制 + 错误码）
+     * 断言表达式为 true（label 机制 + 错误码）。
+     *
+     * @param expression 布尔表达式
+     * @param code       错误码
+     * @param label      字段/参数名称，用于生成语义化错误消息
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrueAs(boolean expression, int code, String label) {
         if (!expression) {
@@ -333,17 +455,28 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 true（label 机制 + 指定异常工厂）
+     * 断言表达式为 true（label 机制 + 指定异常工厂）。
      * <p>自动生成消息：{label} must be true</p>
+     *
+     * @param expression 布尔表达式
+     * @param label      字段/参数名称，用于生成语义化错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrueAs(boolean expression, String label, ExceptionFactory factory) {
         if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be true", factory);
+            throw newException(label + " must be true", factory);
         }
     }
 
     /**
-     * 断言表达式为 true（label 机制 + 错误码 + 指定异常工厂）
+     * 断言表达式为 true（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param expression 布尔表达式
+     * @param code       错误码
+     * @param label      字段/参数名称，用于生成语义化错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 false
      */
     public static void isTrueAs(boolean expression, int code, String label, ExceptionFactory factory) {
         if (!expression) {
@@ -354,41 +487,77 @@ public final class BizAssert {
     // ---------- isFalse ----------
 
     /**
-     * 断言表达式为 false（无消息）
+     * 断言表达式为 false（无消息，使用默认消息 "expression must be false"）。
+     *
+     * @param expression 布尔表达式
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalse(boolean expression) {
         isFalse(expression, "expression must be false");
     }
 
     /**
-     * 断言表达式为 false
+     * 断言表达式为 false。
+     *
+     * @param expression 布尔表达式
+     * @param message    断言失败时的错误消息
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalse(boolean expression, String message) {
         if (expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
     }
 
     /**
-     * 断言表达式为 false（占位符消息）
+     * 断言表达式为 false（占位符消息）。
+     *
+     * @param expression 布尔表达式
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalse(boolean expression, String message, Object... args) {
         if (expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
     }
 
     /**
-     * 断言表达式为 false（延迟构建消息）
+     * 断言表达式为 false（延迟构建消息）。
+     * <p>消息仅在断言失败时求值，适用于消息构建代价较高的场景。</p>
+     *
+     * @param expression      布尔表达式
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalse(boolean expression, Supplier<String> messageSupplier) {
         if (expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
     }
 
     /**
-     * 断言表达式为 false（带错误码）
+     * 断言表达式为 false（延迟构建消息 + 占位符参数）。
+     *
+     * @param expression      布尔表达式
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @throws RuntimeException 若表达式为 true
+     */
+    public static void isFalse(boolean expression, Supplier<String> messageSupplier, Object... args) {
+        if (expression) {
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+        }
+    }
+
+    /**
+     * 断言表达式为 false（带错误码）。
+     *
+     * @param expression 布尔表达式
+     * @param code       错误码
+     * @param message    错误消息
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalse(boolean expression, int code, String message) {
         if (expression) {
@@ -397,7 +566,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 false（带错误码 + 占位符参数）
+     * 断言表达式为 false（带错误码 + 占位符参数）。
+     *
+     * @param expression 布尔表达式
+     * @param code       错误码
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalse(boolean expression, int code, String message, Object... args) {
         if (expression) {
@@ -406,7 +581,11 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 false（错误枚举）
+     * 断言表达式为 false（错误枚举）。
+     *
+     * @param expression 布尔表达式
+     * @param errorCode  错误枚举，包含错误码与错误消息
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalse(boolean expression, IErrorCode errorCode) {
         if (expression) {
@@ -415,7 +594,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 false（错误枚举 + 占位符参数）
+     * 断言表达式为 false（错误枚举 + 占位符参数）。
+     *
+     * @param expression 布尔表达式
+     * @param errorCode  错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalse(boolean expression, IErrorCode errorCode, Object... args) {
         if (expression) {
@@ -424,34 +608,55 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 false（指定异常工厂 + 默认消息）
+     * 断言表达式为 false（指定异常工厂 + 默认消息）。
+     *
+     * @param expression 布尔表达式
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalse(boolean expression, ExceptionFactory factory) {
         if (expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, "expression must be false", factory);
+            throw newException("expression must be false", factory);
         }
     }
 
     /**
-     * 断言表达式为 false（指定异常工厂）
+     * 断言表达式为 false（指定异常工厂）。
+     *
+     * @param expression 布尔表达式
+     * @param message    错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalse(boolean expression, String message, ExceptionFactory factory) {
         if (expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
     }
 
     /**
-     * 断言表达式为 false（指定异常工厂 + 占位符参数）
+     * 断言表达式为 false（指定异常工厂 + 占位符参数）。
+     *
+     * @param expression 布尔表达式
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalse(boolean expression, String message, ExceptionFactory factory, Object... args) {
         if (expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
     }
 
     /**
-     * 断言表达式为 false（指定异常工厂 + 带错误码）
+     * 断言表达式为 false（指定异常工厂 + 带错误码）。
+     *
+     * @param expression 布尔表达式
+     * @param code       错误码
+     * @param message    错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalse(boolean expression, int code, String message, ExceptionFactory factory) {
         if (expression) {
@@ -460,7 +665,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 false（指定异常工厂 + 带错误码 + 占位符参数）
+     * 断言表达式为 false（指定异常工厂 + 带错误码 + 占位符参数）。
+     *
+     * @param expression 布尔表达式
+     * @param code       错误码
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalse(boolean expression, int code, String message, ExceptionFactory factory, Object... args) {
         if (expression) {
@@ -469,7 +681,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 false（指定异常工厂 + 错误枚举）
+     * 断言表达式为 false（指定异常工厂 + 错误枚举）。
+     *
+     * @param expression 布尔表达式
+     * @param errorCode  错误枚举，包含错误码与错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalse(boolean expression, IErrorCode errorCode, ExceptionFactory factory) {
         if (expression) {
@@ -478,7 +695,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 false（指定异常工厂 + 错误枚举 + 占位符参数）
+     * 断言表达式为 false（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param expression 布尔表达式
+     * @param errorCode  错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalse(boolean expression, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (expression) {
@@ -487,7 +710,11 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 false（直接传入异常实例）
+     * 断言表达式为 false（直接传入异常实例）。
+     *
+     * @param expression        布尔表达式
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @throws RuntimeException 若表达式为 true，抛出由 exceptionSupplier 提供的异常
      */
     public static void isFalseOrThrow(boolean expression, Supplier<? extends RuntimeException> exceptionSupplier) {
         if (expression) {
@@ -496,22 +723,31 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 false（label 机制）
+     * 断言表达式为 false（label 机制）。
      * <p>自动生成消息：{label} must be false</p>
      *
      * <pre>{@code
      * BizAssert.isFalseAs(order.isPaid(), "paid");
-     * // 等价于 BizAssert.isFalse(userId, "{0} must be false", "paid");
+     * // 断言失败时消息为："paid must be false"
      * }</pre>
+     *
+     * @param expression 布尔表达式
+     * @param label      字段/参数名称，用于生成语义化错误消息
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalseAs(boolean expression, String label) {
         if (expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be false");
+            throw newException(label + " must be false");
         }
     }
 
     /**
-     * 断言表达式为 false（label 机制 + 错误码）
+     * 断言表达式为 false（label 机制 + 错误码）。
+     *
+     * @param expression 布尔表达式
+     * @param code       错误码
+     * @param label      字段/参数名称，用于生成语义化错误消息
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalseAs(boolean expression, int code, String label) {
         if (expression) {
@@ -520,22 +756,28 @@ public final class BizAssert {
     }
 
     /**
-     * 断言表达式为 false（label 机制 + 指定异常工厂）
+     * 断言表达式为 false（label 机制 + 指定异常工厂）。
      * <p>自动生成消息：{label} must be false</p>
      *
-     * <pre>{@code
-     * BizAssert.isFalseAs(order.isPaid(), "paid");
-     * // 等价于 BizAssert.isFalse(userId, "{0} must be false", "paid");
-     * }</pre>
+     * @param expression 布尔表达式
+     * @param label      字段/参数名称，用于生成语义化错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalseAs(boolean expression, String label, ExceptionFactory factory) {
         if (expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be false", factory);
+            throw newException(label + " must be false", factory);
         }
     }
 
     /**
-     * 断言表达式为 false（label 机制 + 错误码 + 指定异常工厂）
+     * 断言表达式为 false（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param expression 布尔表达式
+     * @param code       错误码
+     * @param label      字段/参数名称，用于生成语义化错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 true
      */
     public static void isFalseAs(boolean expression, int code, String label, ExceptionFactory factory) {
         if (expression) {
@@ -548,14 +790,19 @@ public final class BizAssert {
     // ========================================================================
 
     /**
-     * 断言对象不为 null（无消息）
+     * 断言对象不为 null（无消息，使用默认消息 "parameter must not be null"）。
+     *
+     * @param object 待校验对象
+     * @param <T>    对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNull(T object) {
         return notNull(object, "parameter must not be null");
     }
 
     /**
-     * 断言对象不为 null（Pass-through）
+     * 断言对象不为 null（Pass-through，返回非 null 的值）。
      *
      * <pre>{@code
      * User user = BizAssert.notNull(userRepo.findById(id), "用户不存在");
@@ -565,49 +812,77 @@ public final class BizAssert {
      * @param message 错误消息
      * @param <T>     对象类型
      * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNull(T object, String message) {
         if (object == null) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return object;
     }
 
     /**
-     * 断言对象不为 null（占位符消息）
+     * 断言对象不为 null（占位符消息）。
      * <p><b>注意：</b>当只有一个额外参数且类型为 String 时，编译器会优先匹配此方法而非
-     * {@link #notNull(Object, String)} 。如果不需要占位符替换，请使用
+     * {@link #notNull(Object, String)}。如果不需要占位符替换，请使用
      * {@link #notNull(Object, String)} 的精确两参数形式。</p>
+     *
+     * @param object  待校验对象
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @param <T>     对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNull(T object, String message, Object... args) {
         if (object == null) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return object;
     }
 
     /**
-     * 断言对象不为 null（延迟构建消息）
+     * 断言对象不为 null（延迟构建消息）。
+     *
+     * @param object          待校验对象
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @param <T>             对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNull(T object, Supplier<String> messageSupplier) {
         if (object == null) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return object;
     }
 
     /**
-     * 断言对象不为 null（延迟构建消息 + 占位符参数）
+     * 断言对象不为 null（延迟构建消息 + 占位符参数）。
+     *
+     * @param object          待校验对象
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @param <T>             对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNull(T object, Supplier<String> messageSupplier, Object... args) {
         if (object == null) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return object;
     }
 
     /**
-     * 断言对象不为 null（带错误码）
+     * 断言对象不为 null（带错误码）。
+     *
+     * @param object  待校验对象
+     * @param code    错误码
+     * @param message 错误消息
+     * @param <T>     对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNull(T object, int code, String message) {
         if (object == null) {
@@ -617,7 +892,15 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象不为 null（带错误码 + 占位符参数）
+     * 断言对象不为 null（带错误码 + 占位符参数）。
+     *
+     * @param object  待校验对象
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @param <T>     对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNull(T object, int code, String message, Object... args) {
         if (object == null) {
@@ -627,7 +910,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象不为 null（错误枚举）
+     * 断言对象不为 null（错误枚举）。
+     *
+     * @param object    待校验对象
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param <T>       对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNull(T object, IErrorCode errorCode) {
         if (object == null) {
@@ -637,7 +926,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象不为 null（错误枚举 + 占位符参数）
+     * 断言对象不为 null（错误枚举 + 占位符参数）。
+     *
+     * @param object    待校验对象
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param args      占位符参数
+     * @param <T>       对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNull(T object, IErrorCode errorCode, Object... args) {
         if (object == null) {
@@ -647,37 +943,66 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象不为 null（指定异常工厂 + 默认消息）
+     * 断言对象不为 null（指定异常工厂 + 默认消息）。
+     *
+     * @param object  待校验对象
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNull(T object, ExceptionFactory factory) {
         if (object == null) {
-            throw newException(ErrorCodes.UNSPECIFIED, "parameter must not be null", factory);
+            throw newException("parameter must not be null", factory);
         }
         return object;
     }
 
     /**
-     * 断言对象不为 null（指定异常工厂）
+     * 断言对象不为 null（指定异常工厂）。
+     *
+     * @param object  待校验对象
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNull(T object, String message, ExceptionFactory factory) {
         if (object == null) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return object;
     }
 
     /**
-     * 断言对象不为 null（指定异常工厂 + 占位符参数）
+     * 断言对象不为 null（指定异常工厂 + 占位符参数）。
+     *
+     * @param object  待校验对象
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @param <T>     对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNull(T object, String message, ExceptionFactory factory, Object... args) {
         if (object == null) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return object;
     }
 
     /**
-     * 断言对象不为 null（指定异常工厂 + 错误码）
+     * 断言对象不为 null（指定异常工厂 + 错误码）。
+     *
+     * @param object  待校验对象
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNull(T object, int code, String message, ExceptionFactory factory) {
         if (object == null) {
@@ -687,7 +1012,16 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象不为 null（指定异常工厂 + 错误码 + 占位符参数）
+     * 断言对象不为 null（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param object  待校验对象
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @param <T>     对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNull(T object, int code, String message, ExceptionFactory factory, Object... args) {
         if (object == null) {
@@ -697,7 +1031,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象不为 null（指定异常工厂 + 错误枚举）
+     * 断言对象不为 null（指定异常工厂 + 错误枚举）。
+     *
+     * @param object    待校验对象
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param <T>       对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNull(T object, IErrorCode errorCode, ExceptionFactory factory) {
         if (object == null) {
@@ -707,7 +1048,15 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象不为 null（指定异常工厂 + 错误枚举 + 占位符参数）
+     * 断言对象不为 null（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param object    待校验对象
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @param <T>       对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNull(T object, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (object == null) {
@@ -717,7 +1066,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象不为 null（直接传入异常实例）
+     * 断言对象不为 null（直接传入异常实例）。
+     *
+     * @param object            待校验对象
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @param <T>               对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null，抛出由 exceptionSupplier 提供的异常
      */
     public static <T> T notNullOrThrow(T object, Supplier<? extends RuntimeException> exceptionSupplier) {
         if (object == null) {
@@ -727,23 +1082,36 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象不为 null（label 机制）
+     * 断言对象不为 null（label 机制）。
      * <p>自动生成消息：{label} must not be null</p>
      *
      * <pre>{@code
      * BizAssert.notNullAs(userId, "userId");
-     * // 等价于 BizAssert.notNull(userId, "{0} must not be null", "userId");
+     * // 断言失败时消息为："userId must not be null"
      * }</pre>
+     *
+     * @param object 待校验对象
+     * @param label  字段/参数名称，用于生成语义化错误消息
+     * @param <T>    对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNullAs(T object, String label) {
         if (object == null) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be null");
+            throw newException(label + " must not be null");
         }
         return object;
     }
 
     /**
-     * 断言对象不为 null（label 机制 + 错误码）
+     * 断言对象不为 null（label 机制 + 错误码）。
+     *
+     * @param object 待校验对象
+     * @param code   错误码
+     * @param label  字段/参数名称，用于生成语义化错误消息
+     * @param <T>    对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNullAs(T object, int code, String label) {
         if (object == null) {
@@ -753,18 +1121,33 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象不为 null（label 机制 + 指定异常工厂）
+     * 断言对象不为 null（label 机制 + 指定异常工厂）。
      * <p>自动生成消息：{label} must not be null</p>
+     *
+     * @param object  待校验对象
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNullAs(T object, String label, ExceptionFactory factory) {
         if (object == null) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be null", factory);
+            throw newException(label + " must not be null", factory);
         }
         return object;
     }
 
     /**
-     * 断言对象不为 null（label 机制 + 错误码 + 指定异常工厂）
+     * 断言对象不为 null（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param object  待校验对象
+     * @param code    错误码
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     对象类型
+     * @return 非 null 的原对象
+     * @throws RuntimeException 若对象为 null
      */
     public static <T> T notNullAs(T object, int code, String label, ExceptionFactory factory) {
         if (object == null) {
@@ -776,50 +1159,76 @@ public final class BizAssert {
     // ---------- isNull ----------
 
     /**
-     * 断言对象为 null（无消息）
+     * 断言对象为 null（无消息，使用默认消息 "parameter must be null"）。
+     *
+     * @param object 待校验对象
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNull(Object object) {
         isNull(object, "parameter must be null");
     }
 
     /**
-     * 断言对象为 null
+     * 断言对象为 null。
+     *
+     * @param object  待校验对象
+     * @param message 错误消息
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNull(Object object, String message) {
         if (object != null) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
     }
 
     /**
-     * 断言对象为 null（占位符消息）
+     * 断言对象为 null（占位符消息）。
+     *
+     * @param object  待校验对象
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNull(Object object, String message, Object... args) {
         if (object != null) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
     }
 
     /**
-     * 断言对象为 null（延迟构建消息）
+     * 断言对象为 null（延迟构建消息）。
+     *
+     * @param object          待校验对象
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNull(Object object, Supplier<String> messageSupplier) {
         if (object != null) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
     }
 
     /**
-     * 断言对象为 null（延迟构建消息 + 占位符参数）
+     * 断言对象为 null（延迟构建消息 + 占位符参数）。
+     *
+     * @param object          待校验对象
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNull(Object object, Supplier<String> messageSupplier, Object... args) {
         if (object != null) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
     }
 
     /**
-     * 断言对象为 null（带错误码）
+     * 断言对象为 null（带错误码）。
+     *
+     * @param object  待校验对象
+     * @param code    错误码
+     * @param message 错误消息
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNull(Object object, int code, String message) {
         if (object != null) {
@@ -828,7 +1237,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象为 null（带错误码 + 占位符参数）
+     * 断言对象为 null（带错误码 + 占位符参数）。
+     *
+     * @param object  待校验对象
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNull(Object object, int code, String message, Object... args) {
         if (object != null) {
@@ -837,7 +1252,11 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象为 null（错误枚举）
+     * 断言对象为 null（错误枚举）。
+     *
+     * @param object    待校验对象
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNull(Object object, IErrorCode errorCode) {
         if (object != null) {
@@ -846,7 +1265,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象为 null（错误枚举 + 占位符参数）
+     * 断言对象为 null（错误枚举 + 占位符参数）。
+     *
+     * @param object    待校验对象
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param args      占位符参数
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNull(Object object, IErrorCode errorCode, Object... args) {
         if (object != null) {
@@ -855,34 +1279,55 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象为 null（指定异常工厂 + 默认消息）
+     * 断言对象为 null（指定异常工厂 + 默认消息）。
+     *
+     * @param object  待校验对象
+     * @param factory 异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNull(Object object, ExceptionFactory factory) {
         if (object != null) {
-            throw newException(ErrorCodes.UNSPECIFIED, "parameter must be null", factory);
+            throw newException("parameter must be null", factory);
         }
     }
 
     /**
-     * 断言对象为 null（指定异常工厂）
+     * 断言对象为 null（指定异常工厂）。
+     *
+     * @param object  待校验对象
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNull(Object object, String message, ExceptionFactory factory) {
         if (object != null) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
     }
 
     /**
-     * 断言对象为 null（指定异常工厂 + 占位符参数）
+     * 断言对象为 null（指定异常工厂 + 占位符参数）。
+     *
+     * @param object  待校验对象
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNull(Object object, String message, ExceptionFactory factory, Object... args) {
         if (object != null) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
     }
 
     /**
-     * 断言对象为 null（指定异常工厂 + 错误码）
+     * 断言对象为 null（指定异常工厂 + 错误码）。
+     *
+     * @param object  待校验对象
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNull(Object object, int code, String message, ExceptionFactory factory) {
         if (object != null) {
@@ -891,7 +1336,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象为 null（指定异常工厂 + 错误码 + 占位符参数）
+     * 断言对象为 null（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param object  待校验对象
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNull(Object object, int code, String message, ExceptionFactory factory, Object... args) {
         if (object != null) {
@@ -900,7 +1352,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象为 null（指定异常工厂 + 错误枚举）
+     * 断言对象为 null（指定异常工厂 + 错误枚举）。
+     *
+     * @param object    待校验对象
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNull(Object object, IErrorCode errorCode, ExceptionFactory factory) {
         if (object != null) {
@@ -909,7 +1366,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象为 null（指定异常工厂 + 错误枚举 + 占位符参数）
+     * 断言对象为 null（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param object    待校验对象
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNull(Object object, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (object != null) {
@@ -918,7 +1381,11 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象为 null（直接传入异常实例）
+     * 断言对象为 null（直接传入异常实例）。
+     *
+     * @param object            待校验对象
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @throws RuntimeException 若对象不为 null，抛出由 exceptionSupplier 提供的异常
      */
     public static void isNullOrThrow(Object object, Supplier<? extends RuntimeException> exceptionSupplier) {
         if (object != null) {
@@ -927,22 +1394,31 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象为 null（label 机制）
+     * 断言对象为 null（label 机制）。
      * <p>自动生成消息：{label} must be null</p>
      *
      * <pre>{@code
      * BizAssert.isNullAs(userId, "userId");
-     * // 等价于 BizAssert.isNull(userId, "{0} must be null", "userId");
+     * // 断言失败时消息为："userId must be null"
      * }</pre>
+     *
+     * @param object 待校验对象
+     * @param label  字段/参数名称，用于生成语义化错误消息
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNullAs(Object object, String label) {
         if (object != null) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be null");
+            throw newException(label + " must be null");
         }
     }
 
     /**
-     * 断言对象为 null（label 机制 + 错误码）
+     * 断言对象为 null（label 机制 + 错误码）。
+     *
+     * @param object 待校验对象
+     * @param code   错误码
+     * @param label  字段/参数名称，用于生成语义化错误消息
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNullAs(Object object, int code, String label) {
         if (object != null) {
@@ -951,17 +1427,28 @@ public final class BizAssert {
     }
 
     /**
-     * 断言对象为 null（label 机制 + 指定异常工厂）
+     * 断言对象为 null（label 机制 + 指定异常工厂）。
      * <p>自动生成消息：{label} must be null</p>
+     *
+     * @param object  待校验对象
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNullAs(Object object, String label, ExceptionFactory factory) {
         if (object != null) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be null", factory);
+            throw newException(label + " must be null", factory);
         }
     }
 
     /**
-     * 断言对象为 null（label 机制 + 错误码 + 指定异常工厂）
+     * 断言对象为 null（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param object  待校验对象
+     * @param code    错误码
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若对象不为 null
      */
     public static void isNullAs(Object object, int code, String label, ExceptionFactory factory) {
         if (object != null) {
@@ -975,58 +1462,87 @@ public final class BizAssert {
     // ========================================================================
 
     /**
-     * 断言字符串不为空（无消息）
+     * 断言字符串不为空（无消息，使用默认消息 "parameter must not be empty"）。
+     * <p>空的定义：{@code null} 或长度为 0 的字符串。</p>
+     *
+     * @param text 待校验字符串
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmpty(String text) {
         return notEmpty(text, "parameter must not be empty");
     }
 
     /**
-     * 断言字符串不为 null 且不为空字符串（Pass-through）
+     * 断言字符串不为 null 且不为空字符串（Pass-through）。
      *
      * @param text    待校验字符串
      * @param message 错误消息
      * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmpty(String text, String message) {
         if (text == null || text.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空（占位符消息）
+     * 断言字符串不为空（占位符消息）。
+     *
+     * @param text    待校验字符串
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmpty(String text, String message, Object... args) {
         if (text == null || text.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空（延迟构建消息）
+     * 断言字符串不为空（延迟构建消息）。
+     *
+     * @param text            待校验字符串
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmpty(String text, Supplier<String> messageSupplier) {
         if (text == null || text.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空（延迟构建消息 + 占位符参数）
+     * 断言字符串不为空（延迟构建消息 + 占位符参数）。
+     *
+     * @param text            待校验字符串
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmpty(String text, Supplier<String> messageSupplier, Object... args) {
         if (text == null || text.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空（带错误码）
+     * 断言字符串不为空（带错误码）。
+     *
+     * @param text    待校验字符串
+     * @param code    错误码
+     * @param message 错误消息
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmpty(String text, int code, String message) {
         if (text == null || text.isEmpty()) {
@@ -1036,7 +1552,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空（带错误码 + 占位符参数）
+     * 断言字符串不为空（带错误码 + 占位符参数）。
+     *
+     * @param text    待校验字符串
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmpty(String text, int code, String message, Object... args) {
         if (text == null || text.isEmpty()) {
@@ -1046,7 +1569,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空（错误枚举）
+     * 断言字符串不为空（错误枚举）。
+     *
+     * @param text      待校验字符串
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmpty(String text, IErrorCode errorCode) {
         if (text == null || text.isEmpty()) {
@@ -1056,7 +1584,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空（错误枚举 + 占位符参数）
+     * 断言字符串不为空（错误枚举 + 占位符参数）。
+     *
+     * @param text      待校验字符串
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param args      占位符参数
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmpty(String text, IErrorCode errorCode, Object... args) {
         if (text == null || text.isEmpty()) {
@@ -1066,37 +1600,62 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空（指定异常工厂 + 默认消息）
+     * 断言字符串不为空（指定异常工厂 + 默认消息）。
+     *
+     * @param text    待校验字符串
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmpty(String text, ExceptionFactory factory) {
         if (text == null || text.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, "parameter must not be empty", factory);
+            throw newException("parameter must not be empty", factory);
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空（指定异常工厂）
+     * 断言字符串不为空（指定异常工厂）。
+     *
+     * @param text    待校验字符串
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmpty(String text, String message, ExceptionFactory factory) {
         if (text == null || text.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空（指定异常工厂 + 占位符参数）
+     * 断言字符串不为空（指定异常工厂 + 占位符参数）。
+     *
+     * @param text    待校验字符串
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmpty(String text, String message, ExceptionFactory factory, Object... args) {
         if (text == null || text.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空（指定异常工厂 + 错误码）
+     * 断言字符串不为空（指定异常工厂 + 错误码）。
+     *
+     * @param text    待校验字符串
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmpty(String text, int code, String message, ExceptionFactory factory) {
         if (text == null || text.isEmpty()) {
@@ -1106,7 +1665,15 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空（指定异常工厂 + 错误码 + 占位符参数）
+     * 断言字符串不为空（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param text    待校验字符串
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmpty(String text, int code, String message, ExceptionFactory factory, Object... args) {
         if (text == null || text.isEmpty()) {
@@ -1116,7 +1683,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空（指定异常工厂 + 错误枚举）
+     * 断言字符串不为空（指定异常工厂 + 错误枚举）。
+     *
+     * @param text      待校验字符串
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmpty(String text, IErrorCode errorCode, ExceptionFactory factory) {
         if (text == null || text.isEmpty()) {
@@ -1126,7 +1699,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空（指定异常工厂 + 错误枚举 + 占位符参数）
+     * 断言字符串不为空（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param text      待校验字符串
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmpty(String text, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (text == null || text.isEmpty()) {
@@ -1136,7 +1716,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空（直接传入异常实例）
+     * 断言字符串不为空（直接传入异常实例）。
+     *
+     * @param text              待校验字符串
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空，抛出由 exceptionSupplier 提供的异常
      */
     public static String notEmptyOrThrow(String text, Supplier<? extends RuntimeException> exceptionSupplier) {
         if (text == null || text.isEmpty()) {
@@ -1146,17 +1731,29 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空（label 机制）
+     * 断言字符串不为空（label 机制）。
+     * <p>自动生成消息：{label} must not be empty</p>
+     *
+     * @param text  待校验字符串
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmptyAs(String text, String label) {
         if (text == null || text.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be empty");
+            throw newException(label + " must not be empty");
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空（label 机制 + 错误码）
+     * 断言字符串不为空（label 机制 + 错误码）。
+     *
+     * @param text  待校验字符串
+     * @param code  错误码
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmptyAs(String text, int code, String label) {
         if (text == null || text.isEmpty()) {
@@ -1166,17 +1763,30 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空（label 机制 + 指定异常工厂）
+     * 断言字符串不为空（label 机制 + 指定异常工厂）。
+     *
+     * @param text    待校验字符串
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmptyAs(String text, String label, ExceptionFactory factory) {
         if (text == null || text.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be empty", factory);
+            throw newException(label + " must not be empty", factory);
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空（label 机制 + 错误码 + 指定异常工厂）
+     * 断言字符串不为空（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param text    待校验字符串
+     * @param code    错误码
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 非空字符串
+     * @throws RuntimeException 若字符串为 null 或空
      */
     public static String notEmptyAs(String text, int code, String label, ExceptionFactory factory) {
         if (text == null || text.isEmpty()) {
@@ -1190,54 +1800,99 @@ public final class BizAssert {
     // ========================================================================
 
     /**
-     * 断言集合不为空（无消息）
+     * 断言集合不为空（无消息，使用默认消息 "collection must not be empty"）。
+     * <p>空的定义：{@code null} 或 {@link Collection#isEmpty()} 为 {@code true}。</p>
+     *
+     * @param collection 待校验集合
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection) {
         return notEmpty(collection, "collection must not be empty");
     }
 
     /**
-     * 断言集合不为 null 且不为空（Pass-through）
+     * 断言集合不为 null 且不为空（Pass-through）。
+     *
+     * @param collection 待校验集合
+     * @param message    错误消息
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, String message) {
         if (collection == null || collection.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return collection;
     }
 
     /**
-     * 断言集合不为 null 且不为空（Pass-through + 占位符参数）
+     * 断言集合不为空（占位符消息）。
+     *
+     * @param collection 待校验集合
+     * @param message    错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param args       占位符参数
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, String message, Object... args) {
         if (collection == null || collection.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return collection;
     }
 
     /**
-     * 断言集合不为空（延迟构建消息）
+     * 断言集合不为空（延迟构建消息）。
+     *
+     * @param collection      待校验集合
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @param <E>             集合元素类型
+     * @param <T>             集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, Supplier<String> messageSupplier) {
         if (collection == null || collection.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return collection;
     }
 
     /**
-     * 断言集合不为空（延迟构建消息 + 占位符参数）
+     * 断言集合不为空（延迟构建消息 + 占位符参数）。
+     *
+     * @param collection      待校验集合
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @param <E>             集合元素类型
+     * @param <T>             集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, Supplier<String> messageSupplier, Object... args) {
         if (collection == null || collection.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return collection;
     }
 
     /**
-     * 断言集合不为空（带错误码）
+     * 断言集合不为空（带错误码）。
+     *
+     * @param collection 待校验集合
+     * @param code       错误码
+     * @param message    错误消息
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, int code, String message) {
         if (collection == null || collection.isEmpty()) {
@@ -1247,7 +1902,16 @@ public final class BizAssert {
     }
 
     /**
-     * 断言集合不为空（带错误码 + 占位符参数）
+     * 断言集合不为空（带错误码 + 占位符参数）。
+     *
+     * @param collection 待校验集合
+     * @param code       错误码
+     * @param message    错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param args       占位符参数
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, int code, String message, Object... args) {
         if (collection == null || collection.isEmpty()) {
@@ -1257,7 +1921,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言集合不为空（错误枚举）
+     * 断言集合不为空（错误枚举）。
+     *
+     * @param collection 待校验集合
+     * @param errorCode  错误枚举，包含错误码与错误消息
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, IErrorCode errorCode) {
         if (collection == null || collection.isEmpty()) {
@@ -1267,7 +1938,15 @@ public final class BizAssert {
     }
 
     /**
-     * 断言集合不为空（错误枚举 + 占位符参数）
+     * 断言集合不为空（错误枚举 + 占位符参数）。
+     *
+     * @param collection 待校验集合
+     * @param errorCode  错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param args       占位符参数
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, IErrorCode errorCode, Object... args) {
         if (collection == null || collection.isEmpty()) {
@@ -1277,37 +1956,70 @@ public final class BizAssert {
     }
 
     /**
-     * 断言集合不为空（指定异常工厂 + 默认消息）
+     * 断言集合不为空（指定异常工厂 + 默认消息）。
+     *
+     * @param collection 待校验集合
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, ExceptionFactory factory) {
         if (collection == null || collection.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, "collection must not be empty", factory);
+            throw newException("collection must not be empty", factory);
         }
         return collection;
     }
 
     /**
-     * 断言集合不为空（指定异常工厂）
+     * 断言集合不为空（指定异常工厂）。
+     *
+     * @param collection 待校验集合
+     * @param message    错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, String message, ExceptionFactory factory) {
         if (collection == null || collection.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return collection;
     }
 
     /**
-     * 断言集合不为空（指定异常工厂 + 占位符参数）
+     * 断言集合不为空（指定异常工厂 + 占位符参数）。
+     *
+     * @param collection 待校验集合
+     * @param message    错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param args       占位符参数
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, String message, ExceptionFactory factory, Object... args) {
         if (collection == null || collection.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return collection;
     }
 
     /**
-     * 断言集合不为空（指定异常工厂 + 错误码）
+     * 断言集合不为空（指定异常工厂 + 错误码）。
+     *
+     * @param collection 待校验集合
+     * @param code       错误码
+     * @param message    错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, int code, String message, ExceptionFactory factory) {
         if (collection == null || collection.isEmpty()) {
@@ -1317,7 +2029,17 @@ public final class BizAssert {
     }
 
     /**
-     * 断言集合不为空（指定异常工厂 + 错误码 + 占位符参数）
+     * 断言集合不为空（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param collection 待校验集合
+     * @param code       错误码
+     * @param message    错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param args       占位符参数
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, int code, String message, ExceptionFactory factory, Object... args) {
         if (collection == null || collection.isEmpty()) {
@@ -1327,7 +2049,15 @@ public final class BizAssert {
     }
 
     /**
-     * 断言集合不为空（指定异常工厂 + 错误枚举）
+     * 断言集合不为空（指定异常工厂 + 错误枚举）。
+     *
+     * @param collection 待校验集合
+     * @param errorCode  错误枚举，包含错误码与错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, IErrorCode errorCode, ExceptionFactory factory) {
         if (collection == null || collection.isEmpty()) {
@@ -1337,7 +2067,16 @@ public final class BizAssert {
     }
 
     /**
-     * 断言集合不为空（指定异常工厂 + 错误枚举 + 占位符参数）
+     * 断言集合不为空（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param collection 待校验集合
+     * @param errorCode  错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param args       占位符参数
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (collection == null || collection.isEmpty()) {
@@ -1347,7 +2086,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言集合不为空（直接传入异常实例）
+     * 断言集合不为空（直接传入异常实例）。
+     *
+     * @param collection        待校验集合
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @param <E>               集合元素类型
+     * @param <T>               集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空，抛出由 exceptionSupplier 提供的异常
      */
     public static <E, T extends Collection<E>> T notEmptyOrThrow(T collection,
                                                                  Supplier<? extends RuntimeException> exceptionSupplier) {
@@ -1358,17 +2104,33 @@ public final class BizAssert {
     }
 
     /**
-     * 断言集合不为空（label 机制）
+     * 断言集合不为空（label 机制）。
+     * <p>自动生成消息：{label} must not be empty</p>
+     *
+     * @param collection 待校验集合
+     * @param label      字段/参数名称，用于生成语义化错误消息
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmptyAs(T collection, String label) {
         if (collection == null || collection.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be empty");
+            throw newException(label + " must not be empty");
         }
         return collection;
     }
 
     /**
-     * 断言集合不为空（label 机制 + 错误码）
+     * 断言集合不为空（label 机制 + 错误码）。
+     *
+     * @param collection 待校验集合
+     * @param code       错误码
+     * @param label      字段/参数名称，用于生成语义化错误消息
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmptyAs(T collection, int code, String label) {
         if (collection == null || collection.isEmpty()) {
@@ -1378,17 +2140,34 @@ public final class BizAssert {
     }
 
     /**
-     * 断言集合不为空（label 机制 + 指定异常工厂）
+     * 断言集合不为空（label 机制 + 指定异常工厂）。
+     *
+     * @param collection 待校验集合
+     * @param label      字段/参数名称，用于生成语义化错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmptyAs(T collection, String label, ExceptionFactory factory) {
         if (collection == null || collection.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be empty", factory);
+            throw newException(label + " must not be empty", factory);
         }
         return collection;
     }
 
     /**
-     * 断言集合不为空（label 机制 + 错误码 + 指定异常工厂）
+     * 断言集合不为空（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param collection 待校验集合
+     * @param code       错误码
+     * @param label      字段/参数名称，用于生成语义化错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param <E>        集合元素类型
+     * @param <T>        集合类型
+     * @return 非空集合
+     * @throws RuntimeException 若集合为 null 或空
      */
     public static <E, T extends Collection<E>> T notEmptyAs(T collection, int code, String label, ExceptionFactory factory) {
         if (collection == null || collection.isEmpty()) {
@@ -1402,54 +2181,105 @@ public final class BizAssert {
     // ========================================================================
 
     /**
-     * 断言 Map 不为空（无消息）
+     * 断言 Map 不为空（无消息，使用默认消息 "map must not be empty"）。
+     * <p>空的定义：{@code null} 或 {@link Map#isEmpty()} 为 {@code true}。</p>
+     *
+     * @param map 待校验 Map
+     * @param <K> 键类型
+     * @param <V> 值类型
+     * @param <T> Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map) {
         return notEmpty(map, "map must not be empty");
     }
 
     /**
-     * 断言 Map 不为 null 且不为空（Pass-through）
+     * 断言 Map 不为 null 且不为空（Pass-through）。
+     *
+     * @param map     待校验 Map
+     * @param message 错误消息
+     * @param <K>     键类型
+     * @param <V>     值类型
+     * @param <T>     Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, String message) {
         if (map == null || map.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return map;
     }
 
     /**
-     * 断言 Map 不为 null 且不为空（Pass-through + 占位符参数）
+     * 断言 Map 不为空（占位符消息）。
+     *
+     * @param map     待校验 Map
+     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param args    占位符参数
+     * @param <K>     键类型
+     * @param <V>     值类型
+     * @param <T>     Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, String message, Object... args) {
         if (map == null || map.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return map;
     }
 
     /**
-     * 断言 Map 不为空（延迟构建消息）
+     * 断言 Map 不为空（延迟构建消息）。
+     *
+     * @param map             待校验 Map
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @param <K>             键类型
+     * @param <V>             值类型
+     * @param <T>             Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, Supplier<String> messageSupplier) {
         if (map == null || map.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return map;
     }
 
     /**
-     * 断言 Map 不为空（延迟构建消息 + 占位符参数）
+     * 断言 Map 不为空（延迟构建消息 + 占位符参数）。
+     *
+     * @param map             待校验 Map
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @param <K>             键类型
+     * @param <V>             值类型
+     * @param <T>             Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, Supplier<String> messageSupplier, Object... args) {
         if (map == null || map.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return map;
     }
 
     /**
-     * 断言 Map 不为空（带错误码）
+     * 断言 Map 不为空（带错误码）。
+     *
+     * @param map     待校验 Map
+     * @param code    错误码
+     * @param message 错误消息
+     * @param <K>     键类型
+     * @param <V>     值类型
+     * @param <T>     Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, int code, String message) {
         if (map == null || map.isEmpty()) {
@@ -1459,7 +2289,17 @@ public final class BizAssert {
     }
 
     /**
-     * 断言 Map 不为空（带错误码 + 占位符参数）
+     * 断言 Map 不为空（带错误码 + 占位符参数）。
+     *
+     * @param map     待校验 Map
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param args    占位符参数
+     * @param <K>     键类型
+     * @param <V>     值类型
+     * @param <T>     Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, int code, String message, Object... args) {
         if (map == null || map.isEmpty()) {
@@ -1469,7 +2309,15 @@ public final class BizAssert {
     }
 
     /**
-     * 断言 Map 不为空（错误枚举）
+     * 断言 Map 不为空（错误枚举）。
+     *
+     * @param map       待校验 Map
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param <K>       键类型
+     * @param <V>       值类型
+     * @param <T>       Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, IErrorCode errorCode) {
         if (map == null || map.isEmpty()) {
@@ -1479,7 +2327,16 @@ public final class BizAssert {
     }
 
     /**
-     * 断言 Map 不为空（错误枚举 + 占位符参数）
+     * 断言 Map 不为空（错误枚举 + 占位符参数）。
+     *
+     * @param map       待校验 Map
+     * @param errorCode 错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param args      占位符参数
+     * @param <K>       键类型
+     * @param <V>       值类型
+     * @param <T>       Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, IErrorCode errorCode, Object... args) {
         if (map == null || map.isEmpty()) {
@@ -1489,37 +2346,74 @@ public final class BizAssert {
     }
 
     /**
-     * 断言 Map 不为空（指定异常工厂 + 默认消息）
+     * 断言 Map 不为空（指定异常工厂 + 默认消息）。
+     *
+     * @param map     待校验 Map
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <K>     键类型
+     * @param <V>     值类型
+     * @param <T>     Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, ExceptionFactory factory) {
         if (map == null || map.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, "map must not be empty", factory);
+            throw newException("map must not be empty", factory);
         }
         return map;
     }
 
     /**
-     * 断言 Map 不为空（指定异常工厂）
+     * 断言 Map 不为空（指定异常工厂）。
+     *
+     * @param map     待校验 Map
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <K>     键类型
+     * @param <V>     值类型
+     * @param <T>     Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, String message, ExceptionFactory factory) {
         if (map == null || map.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return map;
     }
 
     /**
-     * 断言 Map 不为空（指定异常工厂）
+     * 断言 Map 不为空（指定异常工厂 + 占位符参数）。
+     *
+     * @param map     待校验 Map
+     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @param <K>     键类型
+     * @param <V>     值类型
+     * @param <T>     Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, String message, ExceptionFactory factory, Object... args) {
         if (map == null || map.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return map;
     }
 
     /**
-     * 断言 Map 不为空（指定异常工厂 + 错误码）
+     * 断言 Map 不为空（指定异常工厂 + 错误码）。
+     *
+     * @param map     待校验 Map
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <K>     键类型
+     * @param <V>     值类型
+     * @param <T>     Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, int code, String message, ExceptionFactory factory) {
         if (map == null || map.isEmpty()) {
@@ -1529,7 +2423,18 @@ public final class BizAssert {
     }
 
     /**
-     * 断言 Map 不为空（指定异常工厂 + 错误码 + 占位符参数）
+     * 断言 Map 不为空（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param map     待校验 Map
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @param <K>     键类型
+     * @param <V>     值类型
+     * @param <T>     Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, int code, String message, ExceptionFactory factory, Object... args) {
         if (map == null || map.isEmpty()) {
@@ -1539,7 +2444,16 @@ public final class BizAssert {
     }
 
     /**
-     * 断言 Map 不为空（指定异常工厂 + 错误枚举）
+     * 断言 Map 不为空（指定异常工厂 + 错误枚举）。
+     *
+     * @param map       待校验 Map
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param <K>       键类型
+     * @param <V>       值类型
+     * @param <T>       Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, IErrorCode errorCode, ExceptionFactory factory) {
         if (map == null || map.isEmpty()) {
@@ -1549,7 +2463,17 @@ public final class BizAssert {
     }
 
     /**
-     * 断言 Map 不为空（指定异常工厂 + 错误枚举 + 占位符参数）
+     * 断言 Map 不为空（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param map       待校验 Map
+     * @param errorCode 错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @param <K>       键类型
+     * @param <V>       值类型
+     * @param <T>       Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (map == null || map.isEmpty()) {
@@ -1559,7 +2483,15 @@ public final class BizAssert {
     }
 
     /**
-     * 断言 Map 不为空（直接传入异常实例）
+     * 断言 Map 不为空（直接传入异常实例）。
+     *
+     * @param map               待校验 Map
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @param <K>               键类型
+     * @param <V>               值类型
+     * @param <T>               Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空，抛出由 exceptionSupplier 提供的异常
      */
     public static <K, V, T extends Map<K, V>> T notEmptyOrThrow(T map,
                                                                 Supplier<? extends RuntimeException> exceptionSupplier) {
@@ -1570,17 +2502,35 @@ public final class BizAssert {
     }
 
     /**
-     * 断言 Map 不为空（label 机制）
+     * 断言 Map 不为空（label 机制）。
+     * <p>自动生成消息：{label} must not be empty</p>
+     *
+     * @param map   待校验 Map
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @param <K>   键类型
+     * @param <V>   值类型
+     * @param <T>   Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmptyAs(T map, String label) {
         if (map == null || map.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be empty");
+            throw newException(label + " must not be empty");
         }
         return map;
     }
 
     /**
-     * 断言 Map 不为空（label 机制 + 错误码）
+     * 断言 Map 不为空（label 机制 + 错误码）。
+     *
+     * @param map   待校验 Map
+     * @param code  错误码
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @param <K>   键类型
+     * @param <V>   值类型
+     * @param <T>   Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmptyAs(T map, int code, String label) {
         if (map == null || map.isEmpty()) {
@@ -1590,17 +2540,36 @@ public final class BizAssert {
     }
 
     /**
-     * 断言 Map 不为空（label 机制 + 指定异常工厂）
+     * 断言 Map 不为空（label 机制 + 指定异常工厂）。
+     *
+     * @param map     待校验 Map
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <K>     键类型
+     * @param <V>     值类型
+     * @param <T>     Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmptyAs(T map, String label, ExceptionFactory factory) {
         if (map == null || map.isEmpty()) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be empty", factory);
+            throw newException(label + " must not be empty", factory);
         }
         return map;
     }
 
     /**
-     * 断言 Map 不为空（label 机制 + 错误码 + 指定异常工厂）
+     * 断言 Map 不为空（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param map     待校验 Map
+     * @param code    错误码
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <K>     键类型
+     * @param <V>     值类型
+     * @param <T>     Map 类型
+     * @return 非空 Map
+     * @throws RuntimeException 若 Map 为 null 或空
      */
     public static <K, V, T extends Map<K, V>> T notEmptyAs(T map, int code, String label, ExceptionFactory factory) {
         if (map == null || map.isEmpty()) {
@@ -1614,54 +2583,93 @@ public final class BizAssert {
     // ========================================================================
 
     /**
-     * 断言数组不为空（无消息）
+     * 断言数组不为空（无消息，使用默认消息 "array must not be empty"）。
+     * <p>空的定义：{@code null} 或长度为 0 的数组。</p>
+     *
+     * @param array 待校验数组
+     * @param <T>   数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmpty(T[] array) {
         return notEmpty(array, "array must not be empty");
     }
 
     /**
-     * 断言数组不为 null 且不为空（Pass-through）
+     * 断言数组不为 null 且不为空（Pass-through）。
+     *
+     * @param array   待校验数组
+     * @param message 错误消息
+     * @param <T>     数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmpty(T[] array, String message) {
         if (array == null || array.length == 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return array;
     }
 
     /**
-     * 断言数组不为 null 且不为空（Pass-through + 占位符参数）
+     * 断言数组不为空（占位符消息）。
+     *
+     * @param array   待校验数组
+     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param args    占位符参数
+     * @param <T>     数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmpty(T[] array, String message, Object... args) {
         if (array == null || array.length == 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return array;
     }
 
     /**
-     * 断言数组不为空（延迟构建消息）
+     * 断言数组不为空（延迟构建消息）。
+     *
+     * @param array           待校验数组
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @param <T>             数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmpty(T[] array, Supplier<String> messageSupplier) {
         if (array == null || array.length == 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return array;
     }
 
     /**
-     * 断言数组不为空（延迟构建消息 + 占位符参数）
+     * 断言数组不为空（延迟构建消息 + 占位符参数）。
+     *
+     * @param array           待校验数组
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @param <T>             数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmpty(T[] array, Supplier<String> messageSupplier, Object... args) {
         if (array == null || array.length == 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return array;
     }
 
     /**
-     * 断言数组不为空（带错误码）
+     * 断言数组不为空（带错误码）。
+     *
+     * @param array   待校验数组
+     * @param code    错误码
+     * @param message 错误消息
+     * @param <T>     数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmpty(T[] array, int code, String message) {
         if (array == null || array.length == 0) {
@@ -1671,7 +2679,15 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数组不为空（带错误码 + 占位符参数）
+     * 断言数组不为空（带错误码 + 占位符参数）。
+     *
+     * @param array   待校验数组
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param args    占位符参数
+     * @param <T>     数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmpty(T[] array, int code, String message, Object... args) {
         if (array == null || array.length == 0) {
@@ -1681,7 +2697,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数组不为空（错误枚举）
+     * 断言数组不为空（错误枚举）。
+     *
+     * @param array     待校验数组
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param <T>       数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmpty(T[] array, IErrorCode errorCode) {
         if (array == null || array.length == 0) {
@@ -1691,7 +2713,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数组不为空（错误枚举 + 占位符参数）
+     * 断言数组不为空（错误枚举 + 占位符参数）。
+     *
+     * @param array     待校验数组
+     * @param errorCode 错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param args      占位符参数
+     * @param <T>       数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmpty(T[] array, IErrorCode errorCode, Object... args) {
         if (array == null || array.length == 0) {
@@ -1701,37 +2730,66 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数组不为空（指定异常工厂 + 默认消息）
+     * 断言数组不为空（指定异常工厂 + 默认消息）。
+     *
+     * @param array   待校验数组
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmpty(T[] array, ExceptionFactory factory) {
         if (array == null || array.length == 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, "array must not be empty", factory);
+            throw newException("array must not be empty", factory);
         }
         return array;
     }
 
     /**
-     * 断言数组不为空（指定异常工厂）
+     * 断言数组不为空（指定异常工厂）。
+     *
+     * @param array   待校验数组
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmpty(T[] array, String message, ExceptionFactory factory) {
         if (array == null || array.length == 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return array;
     }
 
     /**
-     * 断言数组不为空（指定异常工厂 + 占位符参数）
+     * 断言数组不为空（指定异常工厂 + 占位符参数）。
+     *
+     * @param array   待校验数组
+     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @param <T>     数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmpty(T[] array, String message, ExceptionFactory factory, Object... args) {
         if (array == null || array.length == 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return array;
     }
 
     /**
-     * 断言数组不为空（指定异常工厂 + 错误码）
+     * 断言数组不为空（指定异常工厂 + 错误码）。
+     *
+     * @param array   待校验数组
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmpty(T[] array, int code, String message, ExceptionFactory factory) {
         if (array == null || array.length == 0) {
@@ -1741,7 +2799,16 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数组不为空（指定异常工厂 + 错误码 + 占位符参数）
+     * 断言数组不为空（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param array   待校验数组
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @param <T>     数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmpty(T[] array, int code, String message, ExceptionFactory factory, Object... args) {
         if (array == null || array.length == 0) {
@@ -1751,7 +2818,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数组不为空（指定异常工厂 + 错误枚举）
+     * 断言数组不为空（指定异常工厂 + 错误枚举）。
+     *
+     * @param array     待校验数组
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param <T>       数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmpty(T[] array, IErrorCode errorCode, ExceptionFactory factory) {
         if (array == null || array.length == 0) {
@@ -1761,7 +2835,15 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数组不为空（指定异常工厂 + 错误枚举 + 占位符参数）
+     * 断言数组不为空（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param array     待校验数组
+     * @param errorCode 错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @param <T>       数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmpty(T[] array, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (array == null || array.length == 0) {
@@ -1771,7 +2853,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数组不为空（直接传入异常实例）
+     * 断言数组不为空（直接传入异常实例）。
+     *
+     * @param array             待校验数组
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @param <T>               数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空，抛出由 exceptionSupplier 提供的异常
      */
     public static <T> T[] notEmptyOrThrow(T[] array, Supplier<? extends RuntimeException> exceptionSupplier) {
         if (array == null || array.length == 0) {
@@ -1781,17 +2869,31 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数组不为空（label 机制）
+     * 断言数组不为空（label 机制）。
+     * <p>自动生成消息：{label} must not be empty</p>
+     *
+     * @param array 待校验数组
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @param <T>   数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmptyAs(T[] array, String label) {
         if (array == null || array.length == 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be empty");
+            throw newException(label + " must not be empty");
         }
         return array;
     }
 
     /**
-     * 断言数组不为空（label 机制 + 错误码）
+     * 断言数组不为空（label 机制 + 错误码）。
+     *
+     * @param array 待校验数组
+     * @param code  错误码
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @param <T>   数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmptyAs(T[] array, int code, String label) {
         if (array == null || array.length == 0) {
@@ -1801,17 +2903,32 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数组不为空（label 机制 + 指定异常工厂）
+     * 断言数组不为空（label 机制 + 指定异常工厂）。
+     *
+     * @param array   待校验数组
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmptyAs(T[] array, String label, ExceptionFactory factory) {
         if (array == null || array.length == 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be empty", factory);
+            throw newException(label + " must not be empty", factory);
         }
         return array;
     }
 
     /**
-     * 断言数组不为空（label 机制 + 错误码 + 指定异常工厂）
+     * 断言数组不为空（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param array   待校验数组
+     * @param code    错误码
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     数组元素类型
+     * @return 非空数组
+     * @throws RuntimeException 若数组为 null 或空
      */
     public static <T> T[] notEmptyAs(T[] array, int code, String label, ExceptionFactory factory) {
         if (array == null || array.length == 0) {
@@ -1825,56 +2942,88 @@ public final class BizAssert {
     // ========================================================================
 
     /**
-     * 断言字符串不为空白（无消息）
+     * 断言字符串不为空白（无消息，使用默认消息 "parameter must not be blank"）。
+     * <p>空白的定义：{@code null}、长度为 0 的字符串或仅包含空白字符的字符串。</p>
+     *
+     * @param text 待校验字符串
+     * @return 非空白字符串（原始值，不做 trim）
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlank(String text) {
         return notBlank(text, "parameter must not be blank");
     }
 
     /**
-     * 断言字符串不为 null、不为空、不全为空白字符（Pass-through）
-     * <p>返回原始值，不做 trim</p>
+     * 断言字符串不为 null、不为空、不全为空白字符（Pass-through）。
+     * <p>返回原始值，不做 trim。</p>
+     *
+     * @param text    待校验字符串
+     * @param message 错误消息
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlank(String text, String message) {
         if (isBlank(text)) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空白（占位符消息）
+     * 断言字符串不为空白（占位符消息）。
+     *
+     * @param text    待校验字符串
+     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param args    占位符参数
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlank(String text, String message, Object... args) {
         if (isBlank(text)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return text;
     }
 
-
     /**
-     * 断言字符串不为空白（延迟构建消息）
+     * 断言字符串不为空白（延迟构建消息）。
+     *
+     * @param text            待校验字符串
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlank(String text, Supplier<String> messageSupplier) {
         if (isBlank(text)) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空白（延迟构建消息 + 占位符参数）
+     * 断言字符串不为空白（延迟构建消息 + 占位符参数）。
+     *
+     * @param text            待校验字符串
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlank(String text, Supplier<String> messageSupplier, Object... args) {
         if (isBlank(text)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空白（带错误码）
+     * 断言字符串不为空白（带错误码）。
+     *
+     * @param text    待校验字符串
+     * @param code    错误码
+     * @param message 错误消息
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlank(String text, int code, String message) {
         if (isBlank(text)) {
@@ -1884,7 +3033,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空白（带错误码 + 占位符参数）
+     * 断言字符串不为空白（带错误码 + 占位符参数）。
+     *
+     * @param text    待校验字符串
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param args    占位符参数
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlank(String text, int code, String message, Object... args) {
         if (isBlank(text)) {
@@ -1894,7 +3050,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空白（错误枚举）
+     * 断言字符串不为空白（错误枚举）。
+     *
+     * @param text      待校验字符串
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlank(String text, IErrorCode errorCode) {
         if (isBlank(text)) {
@@ -1904,7 +3065,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空白（错误枚举 + 占位符参数）
+     * 断言字符串不为空白（错误枚举 + 占位符参数）。
+     *
+     * @param text      待校验字符串
+     * @param errorCode 错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param args      占位符参数
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlank(String text, IErrorCode errorCode, Object... args) {
         if (isBlank(text)) {
@@ -1914,37 +3081,62 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空白（指定异常工厂 + 默认消息）
+     * 断言字符串不为空白（指定异常工厂 + 默认消息）。
+     *
+     * @param text    待校验字符串
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlank(String text, ExceptionFactory factory) {
         if (isBlank(text)) {
-            throw newException(ErrorCodes.UNSPECIFIED, "parameter must not be blank", factory);
+            throw newException("parameter must not be blank", factory);
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空白（指定异常工厂）
+     * 断言字符串不为空白（指定异常工厂）。
+     *
+     * @param text    待校验字符串
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlank(String text, String message, ExceptionFactory factory) {
         if (isBlank(text)) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空白（指定异常工厂+ 占位符参数）
+     * 断言字符串不为空白（指定异常工厂 + 占位符参数）。
+     *
+     * @param text    待校验字符串
+     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlank(String text, String message, ExceptionFactory factory, Object... args) {
         if (isBlank(text)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空白（指定异常工厂 + 错误码）
+     * 断言字符串不为空白（指定异常工厂 + 错误码）。
+     *
+     * @param text    待校验字符串
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlank(String text, int code, String message, ExceptionFactory factory) {
         if (isBlank(text)) {
@@ -1954,7 +3146,15 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空白（指定异常工厂 + 错误码 + 占位符参数）
+     * 断言字符串不为空白（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param text    待校验字符串
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlank(String text, int code, String message, ExceptionFactory factory, Object... args) {
         if (isBlank(text)) {
@@ -1964,7 +3164,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空白（指定异常工厂 + 错误枚举）
+     * 断言字符串不为空白（指定异常工厂 + 错误枚举）。
+     *
+     * @param text      待校验字符串
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlank(String text, IErrorCode errorCode, ExceptionFactory factory) {
         if (isBlank(text)) {
@@ -1974,7 +3180,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空白（指定异常工厂 + 错误枚举 + 占位符参数）
+     * 断言字符串不为空白（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param text      待校验字符串
+     * @param errorCode 错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlank(String text, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (isBlank(text)) {
@@ -1984,7 +3197,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空白（直接传入异常实例）
+     * 断言字符串不为空白（直接传入异常实例）。
+     *
+     * @param text              待校验字符串
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白，抛出由 exceptionSupplier 提供的异常
      */
     public static String notBlankOrThrow(String text, Supplier<? extends RuntimeException> exceptionSupplier) {
         if (isBlank(text)) {
@@ -1994,17 +3212,29 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空白（label 机制）
+     * 断言字符串不为空白（label 机制）。
+     * <p>自动生成消息：{label} must not be blank</p>
+     *
+     * @param text  待校验字符串
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlankAs(String text, String label) {
         if (isBlank(text)) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be blank");
+            throw newException(label + " must not be blank");
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空白（label 机制 + 错误码）
+     * 断言字符串不为空白（label 机制 + 错误码）。
+     *
+     * @param text  待校验字符串
+     * @param code  错误码
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlankAs(String text, int code, String label) {
         if (isBlank(text)) {
@@ -2014,17 +3244,30 @@ public final class BizAssert {
     }
 
     /**
-     * 断言字符串不为空白（label 机制 + 指定异常工厂）
+     * 断言字符串不为空白（label 机制 + 指定异常工厂）。
+     *
+     * @param text    待校验字符串
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlankAs(String text, String label, ExceptionFactory factory) {
         if (isBlank(text)) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must not be blank", factory);
+            throw newException(label + " must not be blank", factory);
         }
         return text;
     }
 
     /**
-     * 断言字符串不为空白（label 机制 + 错误码 + 指定异常工厂）
+     * 断言字符串不为空白（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param text    待校验字符串
+     * @param code    错误码
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 非空白字符串
+     * @throws RuntimeException 若字符串为 null、空或空白
      */
     public static String notBlankAs(String text, int code, String label, ExceptionFactory factory) {
         if (isBlank(text)) {
@@ -2038,244 +3281,420 @@ public final class BizAssert {
     // ========================================================================
 
     /**
-     * 断言两个对象相等（无消息）
+     * 断言两个对象相等（无消息，使用默认消息 "actual must be equal to expected"）。
+     * <p>比较方式：{@link Objects#equals(Object, Object)}。</p>
+     *
+     * @param actual   实际值
+     * @param expected 期望值
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqual(Object actual, Object expected) {
+    public static <T> void isEqual(T actual, T expected) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, "actual must be equal to expected");
+            throw newException("actual must be equal to expected");
         }
     }
 
     /**
-     * 断言两个对象相等（使用 Objects.equals）
+     * 断言两个对象相等（使用 {@link Objects#equals(Object, Object)}）。
+     *
+     * @param actual   实际值
+     * @param expected 期望值
+     * @param message  错误消息
+     * @param <T>      对象类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqual(Object actual, Object expected, String message) {
+    public static <T> void isEqual(T actual, T expected, String message) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
     }
 
     /**
-     * 断言两个对象相等（占位符消息）
+     * 断言两个对象相等（占位符消息）。
+     *
+     * @param actual   实际值
+     * @param expected 期望值
+     * @param message  错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param args     占位符参数
+     * @param <T>      对象类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqual(Object actual, Object expected, String message, Object... args) {
+    public static <T> void isEqual(T actual, T expected, String message, Object... args) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
     }
 
     /**
-     * 断言两个对象相等（延迟构建消息）
+     * 断言两个对象相等（延迟构建消息）。
+     *
+     * @param actual          实际值
+     * @param expected        期望值
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @param <T>             对象类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqual(Object actual, Object expected, Supplier<String> messageSupplier) {
+    public static <T> void isEqual(T actual, T expected, Supplier<String> messageSupplier) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
     }
 
     /**
-     * 断言两个对象相等（延迟构建消息 + 占位符参数）
+     * 断言两个对象相等（延迟构建消息 + 占位符参数）。
+     *
+     * @param actual          实际值
+     * @param expected        期望值
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @param <T>             对象类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqual(Object actual, Object expected, Supplier<String> messageSupplier, Object... args) {
+    public static <T> void isEqual(T actual, T expected, Supplier<String> messageSupplier, Object... args) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
     }
 
     /**
-     * 断言两个对象相等（带错误码）
+     * 断言两个对象相等（带错误码）。
+     *
+     * @param actual   实际值
+     * @param expected 期望值
+     * @param code     错误码
+     * @param message  错误消息
+     * @param <T>      对象类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqual(Object actual, Object expected, int code, String message) {
+    public static <T> void isEqual(T actual, T expected, int code, String message) {
         if (!Objects.equals(actual, expected)) {
             throw newException(code, message);
         }
     }
 
     /**
-     * 断言两个对象相等（带错误码 + 占位符参数）
+     * 断言两个对象相等（带错误码 + 占位符参数）。
+     *
+     * @param actual   实际值
+     * @param expected 期望值
+     * @param code     错误码
+     * @param message  错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param args     占位符参数
+     * @param <T>      对象类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqual(Object actual, Object expected, int code, String message, Object... args) {
+    public static <T> void isEqual(T actual, T expected, int code, String message, Object... args) {
         if (!Objects.equals(actual, expected)) {
             throw newException(code, formatMessage(message, args));
         }
     }
 
     /**
-     * 断言两个对象相等（错误枚举）
+     * 断言两个对象相等（错误枚举）。
+     *
+     * @param actual    实际值
+     * @param expected  期望值
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param <T>       对象类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqual(Object actual, Object expected, IErrorCode errorCode) {
+    public static <T> void isEqual(T actual, T expected, IErrorCode errorCode) {
         if (!Objects.equals(actual, expected)) {
             throw newException(errorCode.getCode(), errorCode.getMessage());
         }
     }
 
     /**
-     * 断言两个对象相等（错误枚举 + 占位符参数）
+     * 断言两个对象相等（错误枚举 + 占位符参数）。
+     *
+     * @param actual    实际值
+     * @param expected  期望值
+     * @param errorCode 错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param args      占位符参数
+     * @param <T>       对象类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqual(Object actual, Object expected, IErrorCode errorCode, Object... args) {
+    public static <T> void isEqual(T actual, T expected, IErrorCode errorCode, Object... args) {
         if (!Objects.equals(actual, expected)) {
             throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
         }
     }
 
     /**
-     * 断言两个对象相等（指定异常工厂 + 默认消息）
+     * 断言两个对象相等（指定异常工厂 + 默认消息）。
+     *
+     * @param actual   实际值
+     * @param expected 期望值
+     * @param factory  异常工厂，用于自定义异常类型
+     * @param <T>      对象类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqual(Object actual, Object expected, ExceptionFactory factory) {
+    public static <T> void isEqual(T actual, T expected, ExceptionFactory factory) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, "actual must be equal to expected", factory);
+            throw newException("actual must be equal to expected", factory);
         }
     }
 
     /**
-     * 断言两个对象相等（指定异常工厂）
+     * 断言两个对象相等（指定异常工厂）。
+     *
+     * @param actual   实际值
+     * @param expected 期望值
+     * @param message  错误消息
+     * @param factory  异常工厂，用于自定义异常类型
+     * @param <T>      对象类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqual(Object actual, Object expected, String message, ExceptionFactory factory) {
+    public static <T> void isEqual(T actual, T expected, String message, ExceptionFactory factory) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
     }
 
     /**
-     * 断言两个对象相等（指定异常工厂 + 占位符参数）
+     * 断言两个对象相等（指定异常工厂 + 占位符参数）。
+     *
+     * @param actual   实际值
+     * @param expected 期望值
+     * @param message  错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param factory  异常工厂，用于自定义异常类型
+     * @param args     占位符参数
+     * @param <T>      对象类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqual(Object actual, Object expected, String message, ExceptionFactory factory, Object... args) {
+    public static <T> void isEqual(T actual, T expected, String message, ExceptionFactory factory, Object... args) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
     }
 
     /**
-     * 断言两个对象相等（指定异常工厂 + 错误码）
+     * 断言两个对象相等（指定异常工厂 + 错误码）。
+     *
+     * @param actual   实际值
+     * @param expected 期望值
+     * @param code     错误码
+     * @param message  错误消息
+     * @param factory  异常工厂，用于自定义异常类型
+     * @param <T>      对象类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqual(Object actual, Object expected, int code, String message, ExceptionFactory factory) {
+    public static <T> void isEqual(T actual, T expected, int code, String message, ExceptionFactory factory) {
         if (!Objects.equals(actual, expected)) {
             throw newException(code, message, factory);
         }
     }
 
     /**
-     * 断言两个对象相等（指定异常工厂 + 错误码 + 占位符参数）
+     * 断言两个对象相等（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param actual   实际值
+     * @param expected 期望值
+     * @param code     错误码
+     * @param message  错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param factory  异常工厂，用于自定义异常类型
+     * @param args     占位符参数
+     * @param <T>      对象类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqual(Object actual, Object expected, int code, String message, ExceptionFactory factory, Object... args) {
+    public static <T> void isEqual(T actual, T expected, int code, String message, ExceptionFactory factory, Object... args) {
         if (!Objects.equals(actual, expected)) {
             throw newException(code, formatMessage(message, args), factory);
         }
     }
 
     /**
-     * 断言两个对象相等（指定异常工厂 + 错误枚举）
+     * 断言两个对象相等（指定异常工厂 + 错误枚举）。
+     *
+     * @param actual    实际值
+     * @param expected  期望值
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param <T>       对象类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqual(Object actual, Object expected, IErrorCode errorCode, ExceptionFactory factory) {
+    public static <T> void isEqual(T actual, T expected, IErrorCode errorCode, ExceptionFactory factory) {
         if (!Objects.equals(actual, expected)) {
             throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
         }
     }
 
     /**
-     * 断言两个对象相等（指定异常工厂 + 错误枚举 + 占位符参数）
+     * 断言两个对象相等（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param actual    实际值
+     * @param expected  期望值
+     * @param errorCode 错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @param <T>       对象类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqual(Object actual, Object expected, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+    public static <T> void isEqual(T actual, T expected, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (!Objects.equals(actual, expected)) {
             throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
         }
     }
 
     /**
-     * 断言两个对象相等（直接传入异常实例）
+     * 断言两个对象相等（直接传入异常实例）。
+     *
+     * @param actual            实际值
+     * @param expected          期望值
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @throws RuntimeException 若两个对象不相等，抛出由 exceptionSupplier 提供的异常
      */
-    public static void isEqualOrThrow(Object actual, Object expected, Supplier<? extends RuntimeException> exceptionSupplier) {
+    public static <T> void isEqualOrThrow(T actual, T expected, Supplier<? extends RuntimeException> exceptionSupplier) {
         if (!Objects.equals(actual, expected)) {
             throw nullSafeGetException(exceptionSupplier);
         }
     }
 
     /**
-     * 断言两个对象相等（label 机制）
+     * 断言两个对象相等（label 机制）。
+     * <p>自动生成消息：{actualLabel} must be equal to {expectedLabel}</p>
+     *
+     * @param actual        实际值
+     * @param expected      期望值
+     * @param actualLabel   实际值的字段/参数名称
+     * @param expectedLabel 期望值的字段/参数名称
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqualAs(Object actual, Object expected, String actualLabel, String expectedLabel) {
+    public static <T> void isEqualAs(T actual, T expected, String actualLabel, String expectedLabel) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, actualLabel + " must be equal to " + expectedLabel);
+            throw newException(actualLabel + " must be equal to " + expectedLabel);
         }
     }
 
     /**
-     * 断言两个对象相等（label 机制 + 带错误码）
+     * 断言两个对象相等（label 机制 + 错误码）。
+     *
+     * @param actual        实际值
+     * @param expected      期望值
+     * @param code          错误码
+     * @param actualLabel   实际值的字段/参数名称
+     * @param expectedLabel 期望值的字段/参数名称
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqualAs(Object actual, Object expected, int code, String actualLabel, String expectedLabel) {
+    public static <T> void isEqualAs(T actual, T expected, int code, String actualLabel, String expectedLabel) {
         if (!Objects.equals(actual, expected)) {
             throw newException(code, actualLabel + " must be equal to " + expectedLabel);
-
         }
     }
 
     /**
-     * 断言两个对象相等（label 机制 + 指定异常工厂）
+     * 断言两个对象相等（label 机制 + 指定异常工厂）。
+     *
+     * @param actual        实际值
+     * @param expected      期望值
+     * @param actualLabel   实际值的字段/参数名称
+     * @param expectedLabel 期望值的字段/参数名称
+     * @param factory       异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqualAs(Object actual, Object expected, String actualLabel, String expectedLabel, ExceptionFactory factory) {
+    public static <T> void isEqualAs(T actual, T expected, String actualLabel, String expectedLabel, ExceptionFactory factory) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, actualLabel + " must be equal to " + expectedLabel, factory);
+            throw newException(actualLabel + " must be equal to " + expectedLabel, factory);
         }
     }
 
     /**
-     * 断言两个对象相等（label 机制 + 错误码 + 指定异常工厂）
+     * 断言两个对象相等（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param actual        实际值
+     * @param expected      期望值
+     * @param code          错误码
+     * @param actualLabel   实际值的字段/参数名称
+     * @param expectedLabel 期望值的字段/参数名称
+     * @param factory       异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若两个对象不相等
      */
-    public static void isEqualAs(Object actual, Object expected, int code, String actualLabel, String expectedLabel, ExceptionFactory factory) {
+    public static <T> void isEqualAs(T actual, T expected, int code, String actualLabel, String expectedLabel, ExceptionFactory factory) {
         if (!Objects.equals(actual, expected)) {
             throw newException(code, actualLabel + " must be equal to " + expectedLabel, factory);
         }
     }
 
-
-
     /**
-     * 断言两个对象不相等（无消息）
+     * 断言两个对象不相等（无消息，使用默认消息 "actual must not be equal to unexpected"）。
+     * <p>比较方式：{@link Objects#equals(Object, Object)}。</p>
+     *
+     * @param actual     实际值
+     * @param unexpected 不期望的值
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqual(Object actual, Object unexpected) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, "actual must not be equal to unexpected");
+            throw newException("actual must not be equal to unexpected");
         }
     }
 
     /**
-     * 断言两个对象不相等
+     * 断言两个对象不相等。
+     *
+     * @param actual     实际值
+     * @param unexpected 不期望的值
+     * @param message    错误消息
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqual(Object actual, Object unexpected, String message) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
     }
 
     /**
-     * 断言两个对象不相等（占位符消息）
+     * 断言两个对象不相等（占位符消息）。
+     *
+     * @param actual     实际值
+     * @param unexpected 不期望的值
+     * @param message    错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param args       占位符参数
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqual(Object actual, Object unexpected, String message, Object... args) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
     }
 
     /**
-     * 断言两个对象不相等（延迟构建消息）
+     * 断言两个对象不相等（延迟构建消息）。
+     *
+     * @param actual          实际值
+     * @param unexpected      不期望的值
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqual(Object actual, Object unexpected, Supplier<String> messageSupplier) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
     }
 
     /**
-     * 断言两个对象不相等（延迟构建消息 + 占位符消息）
+     * 断言两个对象不相等（延迟构建消息 + 占位符参数）。
+     *
+     * @param actual          实际值
+     * @param unexpected      不期望的值
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqual(Object actual, Object unexpected, Supplier<String> messageSupplier, Object... args) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
     }
 
     /**
-     * 断言两个对象不相等（带错误码）
+     * 断言两个对象不相等（带错误码）。
+     *
+     * @param actual     实际值
+     * @param unexpected 不期望的值
+     * @param code       错误码
+     * @param message    错误消息
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqual(Object actual, Object unexpected, int code, String message) {
         if (Objects.equals(actual, unexpected)) {
@@ -2284,7 +3703,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言两个对象不相等（带错误码 + 占位符参数）
+     * 断言两个对象不相等（带错误码 + 占位符参数）。
+     *
+     * @param actual     实际值
+     * @param unexpected 不期望的值
+     * @param code       错误码
+     * @param message    错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param args       占位符参数
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqual(Object actual, Object unexpected, int code, String message, Object... args) {
         if (Objects.equals(actual, unexpected)) {
@@ -2293,7 +3719,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言两个对象不相等（错误枚举）
+     * 断言两个对象不相等（错误枚举）。
+     *
+     * @param actual     实际值
+     * @param unexpected 不期望的值
+     * @param errorCode  错误枚举，包含错误码与错误消息
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqual(Object actual, Object unexpected, IErrorCode errorCode) {
         if (Objects.equals(actual, unexpected)) {
@@ -2302,7 +3733,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言两个对象不相等（错误枚举）
+     * 断言两个对象不相等（错误枚举 + 占位符参数）。
+     *
+     * @param actual     实际值
+     * @param unexpected 不期望的值
+     * @param errorCode  错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param args       占位符参数
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqual(Object actual, Object unexpected, IErrorCode errorCode, Object... args) {
         if (Objects.equals(actual, unexpected)) {
@@ -2311,34 +3748,59 @@ public final class BizAssert {
     }
 
     /**
-     * 断言两个对象不相等（指定异常工厂 + 默认消息）
+     * 断言两个对象不相等（指定异常工厂 + 默认消息）。
+     *
+     * @param actual     实际值
+     * @param unexpected 不期望的值
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqual(Object actual, Object unexpected, ExceptionFactory factory) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, "actual must not be equal to unexpected", factory);
+            throw newException("actual must not be equal to unexpected", factory);
         }
     }
 
     /**
-     * 断言两个对象不相等（指定异常工厂）
+     * 断言两个对象不相等（指定异常工厂）。
+     *
+     * @param actual     实际值
+     * @param unexpected 不期望的值
+     * @param message    错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqual(Object actual, Object unexpected, String message, ExceptionFactory factory) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
     }
 
     /**
-     * 断言两个对象不相等（指定异常工厂 + 占位符参数）
+     * 断言两个对象不相等（指定异常工厂 + 占位符参数）。
+     *
+     * @param actual     实际值
+     * @param unexpected 不期望的值
+     * @param message    错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param args       占位符参数
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqual(Object actual, Object unexpected, String message, ExceptionFactory factory, Object... args) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
     }
 
     /**
-     * 断言两个对象不相等（指定异常工厂 + 错误码）
+     * 断言两个对象不相等（指定异常工厂 + 错误码）。
+     *
+     * @param actual     实际值
+     * @param unexpected 不期望的值
+     * @param code       错误码
+     * @param message    错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqual(Object actual, Object unexpected, int code, String message, ExceptionFactory factory) {
         if (Objects.equals(actual, unexpected)) {
@@ -2347,7 +3809,15 @@ public final class BizAssert {
     }
 
     /**
-     * 断言两个对象不相等（指定异常工厂 + 错误码 + 占位符参数）
+     * 断言两个对象不相等（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param actual     实际值
+     * @param unexpected 不期望的值
+     * @param code       错误码
+     * @param message    错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param args       占位符参数
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqual(Object actual, Object unexpected, int code, String message, ExceptionFactory factory, Object... args) {
         if (Objects.equals(actual, unexpected)) {
@@ -2356,7 +3826,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言两个对象不相等（指定异常工厂 + 错误枚举）
+     * 断言两个对象不相等（指定异常工厂 + 错误枚举）。
+     *
+     * @param actual     实际值
+     * @param unexpected 不期望的值
+     * @param errorCode  错误枚举，包含错误码与错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqual(Object actual, Object unexpected, IErrorCode errorCode, ExceptionFactory factory) {
         if (Objects.equals(actual, unexpected)) {
@@ -2365,7 +3841,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言两个对象不相等（指定异常工厂 + 错误枚举 + 占位符参数）
+     * 断言两个对象不相等（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param actual     实际值
+     * @param unexpected 不期望的值
+     * @param errorCode  错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param args       占位符参数
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqual(Object actual, Object unexpected, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (Objects.equals(actual, unexpected)) {
@@ -2374,7 +3857,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言两个对象不相等（直接传入异常实例）
+     * 断言两个对象不相等（直接传入异常实例）。
+     *
+     * @param actual            实际值
+     * @param unexpected        不期望的值
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @throws RuntimeException 若两个对象相等，抛出由 exceptionSupplier 提供的异常
      */
     public static void notEqualOrThrow(Object actual, Object unexpected, Supplier<? extends RuntimeException> exceptionSupplier) {
         if (Objects.equals(actual, unexpected)) {
@@ -2383,16 +3871,30 @@ public final class BizAssert {
     }
 
     /**
-     * 断言两个对象不相等（label 机制）
+     * 断言两个对象不相等（label 机制）。
+     * <p>自动生成消息：{actualLabel} must not be equal to {unexpectedLabel}</p>
+     *
+     * @param actual          实际值
+     * @param unexpected      不期望的值
+     * @param actualLabel     实际值的字段/参数名称
+     * @param unexpectedLabel 不期望值的字段/参数名称
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqualAs(Object actual, Object unexpected, String actualLabel, String unexpectedLabel) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, actualLabel + " must not be equal to " + unexpectedLabel);
+            throw newException(actualLabel + " must not be equal to " + unexpectedLabel);
         }
     }
 
     /**
-     * 断言两个对象不相等（label 机制 + 带错误码）
+     * 断言两个对象不相等（label 机制 + 错误码）。
+     *
+     * @param actual          实际值
+     * @param unexpected      不期望的值
+     * @param code            错误码
+     * @param actualLabel     实际值的字段/参数名称
+     * @param unexpectedLabel 不期望值的字段/参数名称
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqualAs(Object actual, Object unexpected, int code, String actualLabel, String unexpectedLabel) {
         if (Objects.equals(actual, unexpected)) {
@@ -2401,16 +3903,31 @@ public final class BizAssert {
     }
 
     /**
-     * 断言两个对象不相等（label 机制 + 指定异常工厂）
+     * 断言两个对象不相等（label 机制 + 指定异常工厂）。
+     *
+     * @param actual          实际值
+     * @param unexpected      不期望的值
+     * @param actualLabel     实际值的字段/参数名称
+     * @param unexpectedLabel 不期望值的字段/参数名称
+     * @param factory         异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqualAs(Object actual, Object unexpected, String actualLabel, String unexpectedLabel, ExceptionFactory factory) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(ErrorCodes.UNSPECIFIED, actualLabel + " must not be equal to " + unexpectedLabel, factory);
+            throw newException(actualLabel + " must not be equal to " + unexpectedLabel, factory);
         }
     }
 
     /**
-     * 断言两个对象不相等（label 机制 + 错误码 + 指定异常工厂）
+     * 断言两个对象不相等（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param actual          实际值
+     * @param unexpected      不期望的值
+     * @param code            错误码
+     * @param actualLabel     实际值的字段/参数名称
+     * @param unexpectedLabel 不期望值的字段/参数名称
+     * @param factory         异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若两个对象相等
      */
     public static void notEqualAs(Object actual, Object unexpected, int code, String actualLabel, String unexpectedLabel, ExceptionFactory factory) {
         if (Objects.equals(actual, unexpected)) {
@@ -2422,60 +3939,87 @@ public final class BizAssert {
     //  数值断言 — Pass-through
     // ========================================================================
 
+    /**
+     * 断言 int 数值为正数（{@code > 0}）（无消息，使用默认消息 "value must be positive"）。
+     *
+     * @param value 待校验数值
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
+     */
     public static int isPositive(int value) {
         return isPositive(value, "value must be positive");
     }
 
     /**
-     * 断言数值为正数（> 0）
+     * 断言 int 数值为正数（{@code > 0}）。
      *
      * @param value   待校验数值
      * @param message 错误消息
      * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositive(int value, String message) {
         if (value <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（占位符消息）
+     * 断言 int 数值为正数（{@code > 0}）（占位符消息）。
+     *
+     * @param value   待校验数值
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositive(int value, String message, Object... args) {
         if (value <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（延迟构建消息）
+     * 断言 int 数值为正数（{@code > 0}）（延迟构建消息）。
+     *
+     * @param value           待校验数值
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositive(int value, Supplier<String> messageSupplier) {
         if (value <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（延迟构建消息 + 占位符消息）
+     * 断言 int 数值为正数（{@code > 0}）（延迟构建消息 + 占位符参数）。
+     *
+     * @param value           待校验数值
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositive(int value, Supplier<String> messageSupplier, Object... args) {
         if (value <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（带错误码）
+     * 断言 int 数值为正数（{@code > 0}）（带错误码）。
      *
      * @param value   待校验数值
+     * @param code    错误码
      * @param message 错误消息
      * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositive(int value, int code, String message) {
         if (value <= 0) {
@@ -2485,7 +4029,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（带错误码 + 占位符消息）
+     * 断言 int 数值为正数（{@code > 0}）（带错误码 + 占位符参数）。
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositive(int value, int code, String message, Object... args) {
         if (value <= 0) {
@@ -2495,7 +4046,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（错误枚举）
+     * 断言 int 数值为正数（{@code > 0}）（错误枚举）。
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositive(int value, IErrorCode errorCode) {
         if (value <= 0) {
@@ -2505,7 +4061,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（错误枚举 + 占位符参数）
+     * 断言 int 数值为正数（{@code > 0}）（错误枚举 + 占位符参数）。
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param args      占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositive(int value, IErrorCode errorCode, Object... args) {
         if (value <= 0) {
@@ -2515,46 +4077,63 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 默认消息）
+     * 断言 int 数值为正数（{@code > 0}）（指定异常工厂 + 默认消息）。
+     *
+     * @param value   待校验数值
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositive(int value, ExceptionFactory factory) {
         if (value <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, "value must be positive", factory);
+            throw newException("value must be positive", factory);
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂）
+     * 断言 int 数值为正数（{@code > 0}）（指定异常工厂）。
      *
      * @param value   待校验数值
      * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
      * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositive(int value, String message, ExceptionFactory factory) {
         if (value <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 占位符参数）
+     * 断言 int 数值为正数（{@code > 0}）（指定异常工厂 + 占位符参数）。
+     *
+     * @param value   待校验数值
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositive(int value, String message, ExceptionFactory factory, Object... args) {
         if (value <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return value;
     }
 
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 带错误码）
+     * 断言 int 数值为正数（{@code > 0}）（指定异常工厂 + 带错误码）。
      *
      * @param value   待校验数值
+     * @param code    错误码
      * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
      * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositive(int value, int code, String message, ExceptionFactory factory) {
         if (value <= 0) {
@@ -2564,7 +4143,15 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 带错误码 + 占位符消息）
+     * 断言 int 数值为正数（{@code > 0}）（指定异常工厂 + 带错误码 + 占位符参数）。
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositive(int value, int code, String message, ExceptionFactory factory, Object... args) {
         if (value <= 0) {
@@ -2574,7 +4161,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 错误枚举）
+     * 断言 int 数值为正数（{@code > 0}）（指定异常工厂 + 错误枚举）。
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositive(int value, IErrorCode errorCode, ExceptionFactory factory) {
         if (value <= 0) {
@@ -2584,7 +4177,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 错误枚举 + 占位符参数）
+     * 断言 int 数值为正数（{@code > 0}）（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositive(int value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (value <= 0) {
@@ -2594,7 +4194,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（指直接传入异常实例）
+     * 断言 int 数值为正数（{@code > 0}）（直接传入异常实例）。
+     *
+     * @param value             待校验数值
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}，抛出由 exceptionSupplier 提供的异常
      */
     public static int isPositiveOrThrow(int value, Supplier<? extends RuntimeException> exceptionSupplier) {
         if (value <= 0) {
@@ -2604,17 +4209,29 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（label 机制）
+     * 断言 int 数值为正数（{@code > 0}）（label 机制）。
+     * <p>自动生成消息：{label} must be positive</p>
+     *
+     * @param value 待校验数值
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositiveAs(int value, String label) {
         if (value <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be positive");
+            throw newException(label + " must be positive");
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（带错误码）
+     * 断言 int 数值为正数（{@code > 0}）（label 机制 + 错误码）。
+     *
+     * @param value 待校验数值
+     * @param code  错误码
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositiveAs(int value, int code, String label) {
         if (value <= 0) {
@@ -2624,17 +4241,30 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（label 机制 + 指定异常工厂）
+     * 断言 int 数值为正数（{@code > 0}）（label 机制 + 指定异常工厂）。
+     *
+     * @param value   待校验数值
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositiveAs(int value, String label, ExceptionFactory factory) {
         if (value <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be positive", factory);
+            throw newException(label + " must be positive", factory);
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（label 机制 + 错误码 + 指定异常工厂）
+     * 断言 int 数值为正数（{@code > 0}）（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static int isPositiveAs(int value, int code, String label, ExceptionFactory factory) {
         if (value <= 0) {
@@ -2643,50 +4273,87 @@ public final class BizAssert {
         return value;
     }
 
+    /**
+     * 断言 long 数值为正数（{@code > 0}）（无消息，使用默认消息 "value must be positive"）。
+     *
+     * @param value 待校验数值
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
+     */
     public static long isPositive(long value) {
         return isPositive(value, "value must be positive");
     }
 
-    public static long isPositive(long value, String message) {
-        if (value <= 0L) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
-        }
-        return value;
-    }
-
-    public static long isPositive(long value, String message, Object... args) {
-        if (value <= 0L) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
-        }
-        return value;
-    }
-
     /**
-     * 断言数值为正数（> 0）（延迟构建消息）
-     */
-    public static long isPositive(long value, Supplier<String> messageSupplier) {
-        if (value <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
-        }
-        return value;
-    }
-
-    /**
-     * 断言数值为正数（> 0）（延迟构建消息 + 占位符消息）
-     */
-    public static long isPositive(long value, Supplier<String> messageSupplier, Object... args) {
-        if (value <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
-        }
-        return value;
-    }
-
-    /**
-     * 断言数值为正数（> 0）（带错误码）
+     * 断言 long 数值为正数（{@code > 0}）。
      *
      * @param value   待校验数值
      * @param message 错误消息
      * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
+     */
+    public static long isPositive(long value, String message) {
+        if (value <= 0L) {
+            throw newException(message);
+        }
+        return value;
+    }
+
+    /**
+     * 断言 long 数值为正数（{@code > 0}）（占位符消息）。
+     *
+     * @param value   待校验数值
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
+     */
+    public static long isPositive(long value, String message, Object... args) {
+        if (value <= 0L) {
+            throw newException(formatMessage(message, args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言 long 数值为正数（{@code > 0}）（延迟构建消息）。
+     *
+     * @param value           待校验数值
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
+     */
+    public static long isPositive(long value, Supplier<String> messageSupplier) {
+        if (value <= 0) {
+            throw newException(nullSafeGet(messageSupplier));
+        }
+        return value;
+    }
+
+    /**
+     * 断言 long 数值为正数（{@code > 0}）（延迟构建消息 + 占位符参数）。
+     *
+     * @param value           待校验数值
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
+     */
+    public static long isPositive(long value, Supplier<String> messageSupplier, Object... args) {
+        if (value <= 0) {
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言 long 数值为正数（{@code > 0}）（带错误码）。
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static long isPositive(long value, int code, String message) {
         if (value <= 0) {
@@ -2696,7 +4363,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（带错误码 + 占位符消息）
+     * 断言 long 数值为正数（{@code > 0}）（带错误码 + 占位符参数）。
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static long isPositive(long value, int code, String message, Object... args) {
         if (value <= 0) {
@@ -2705,6 +4379,14 @@ public final class BizAssert {
         return value;
     }
 
+    /**
+     * 断言 long 数值为正数（{@code > 0}）（错误枚举）。
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
+     */
     public static long isPositive(long value, IErrorCode errorCode) {
         if (value <= 0L) {
             throw newException(errorCode.getCode(), errorCode.getMessage());
@@ -2712,6 +4394,15 @@ public final class BizAssert {
         return value;
     }
 
+    /**
+     * 断言 long 数值为正数（{@code > 0}）（错误枚举 + 占位符参数）。
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param args      占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
+     */
     public static long isPositive(long value, IErrorCode errorCode, Object... args) {
         if (value <= 0L) {
             throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
@@ -2720,46 +4411,63 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 默认消息）
+     * 断言 long 数值为正数（{@code > 0}）（指定异常工厂 + 默认消息）。
+     *
+     * @param value   待校验数值
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static long isPositive(long value, ExceptionFactory factory) {
         if (value <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, "value must be positive", factory);
+            throw newException("value must be positive", factory);
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂）
+     * 断言 long 数值为正数（{@code > 0}）（指定异常工厂）。
      *
      * @param value   待校验数值
      * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
      * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static long isPositive(long value, String message, ExceptionFactory factory) {
         if (value <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 占位符参数）
+     * 断言 long 数值为正数（{@code > 0}）（指定异常工厂 + 占位符参数）。
+     *
+     * @param value   待校验数值
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static long isPositive(long value, String message, ExceptionFactory factory, Object... args) {
         if (value <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return value;
     }
 
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 带错误码）
+     * 断言 long 数值为正数（{@code > 0}）（指定异常工厂 + 带错误码）。
      *
      * @param value   待校验数值
+     * @param code    错误码
      * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
      * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static long isPositive(long value, int code, String message, ExceptionFactory factory) {
         if (value <= 0) {
@@ -2769,7 +4477,15 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 带错误码 + 占位符消息）
+     * 断言 long 数值为正数（{@code > 0}）（指定异常工厂 + 带错误码 + 占位符参数）。
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static long isPositive(long value, int code, String message, ExceptionFactory factory, Object... args) {
         if (value <= 0) {
@@ -2779,7 +4495,13 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 错误枚举）
+     * 断言 long 数值为正数（{@code > 0}）（指定异常工厂 + 错误枚举）。
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static long isPositive(long value, IErrorCode errorCode, ExceptionFactory factory) {
         if (value <= 0) {
@@ -2789,7 +4511,14 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 错误枚举 + 占位符参数）
+     * 断言 long 数值为正数（{@code > 0}）（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param value     待校验数值
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static long isPositive(long value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (value <= 0) {
@@ -2799,7 +4528,12 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（指直接传入异常实例）
+     * 断言 long 数值为正数（{@code > 0}）（直接传入异常实例）。
+     *
+     * @param value             待校验数值
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}，抛出由 exceptionSupplier 提供的异常
      */
     public static long isPositiveOrThrow(long value, Supplier<? extends RuntimeException> exceptionSupplier) {
         if (value <= 0) {
@@ -2808,16 +4542,30 @@ public final class BizAssert {
         return value;
     }
 
-
+    /**
+     * 断言 long 数值为正数（{@code > 0}）（label 机制）。
+     * <p>自动生成消息：{label} must be positive</p>
+     *
+     * @param value 待校验数值
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
+     */
     public static long isPositiveAs(long value, String label) {
         if (value <= 0L) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be positive");
+            throw newException(label + " must be positive");
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（带错误码）
+     * 断言 long 数值为正数（{@code > 0}）（label 机制 + 错误码）。
+     *
+     * @param value 待校验数值
+     * @param code  错误码
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static long isPositiveAs(long value, int code, String label) {
         if (value <= 0) {
@@ -2827,17 +4575,30 @@ public final class BizAssert {
     }
 
     /**
-     * 断言数值为正数（> 0）（label 机制 + 指定异常工厂）
+     * 断言 long 数值为正数（{@code > 0}）（label 机制 + 指定异常工厂）。
+     *
+     * @param value   待校验数值
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static long isPositiveAs(long value, String label, ExceptionFactory factory) {
         if (value <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be positive", factory);
+            throw newException(label + " must be positive", factory);
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（label 机制 + 错误码 + 指定异常工厂）
+     * 断言 long 数值为正数（{@code > 0}）（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param value   待校验数值
+     * @param code    错误码
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 原数值
+     * @throws RuntimeException 若数值 {@code <= 0}
      */
     public static long isPositiveAs(long value, int code, String label, ExceptionFactory factory) {
         if (value <= 0) {
@@ -2846,204 +4607,355 @@ public final class BizAssert {
         return value;
     }
 
+    /**
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（无消息，使用默认消息）。
+     * <p>支持所有 {@link Number} 子类（如 {@link Integer}、{@link Long}、
+     * {@link Double}、{@link java.math.BigDecimal} 等），通过 {@code doubleValue()} 进行比较。</p>
+     *
+     * @param value 待校验数值，为 null 时视为断言失败
+     * @param <T>   数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
+     */
     public static <T extends Number> T isPositive(T value) {
         return isPositive(value, "value must be positive");
     }
 
+    /**
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）。
+     *
+     * @param value   待校验数值，为 null 时视为断言失败
+     * @param message 错误消息
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
+     */
     public static <T extends Number> T isPositive(T value, String message) {
-        if (value == null || value.doubleValue() <= 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
-        }
-        return value;
-    }
-
-    public static <T extends Number> T isPositive(T value, String message, Object... args) {
-        if (value == null || value.doubleValue() <= 0L) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        if (value == null || !isPositiveNumber(value)) {
+            throw newException(message);
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（延迟构建消息）
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（占位符消息）。
+     *
+     * @param value   待校验数值，为 null 时视为断言失败
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
+     */
+    public static <T extends Number> T isPositive(T value, String message, Object... args) {
+        if (value == null || !isPositiveNumber(value)) {
+            throw newException(formatMessage(message, args));
+        }
+        return value;
+    }
+
+    /**
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（延迟构建消息）。
+     *
+     * @param value           待校验数值，为 null 时视为断言失败
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @param <T>             数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, Supplier<String> messageSupplier) {
-        if (value == null || value.doubleValue() <= 0L) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        if (value == null || !isPositiveNumber(value)) {
+            throw newException(nullSafeGet(messageSupplier));
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（延迟构建消息 + 占位符消息）
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（延迟构建消息 + 占位符参数）。
+     *
+     * @param value           待校验数值，为 null 时视为断言失败
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @param <T>             数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, Supplier<String> messageSupplier, Object... args) {
-        if (value == null || value.doubleValue() <= 0L) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        if (value == null || !isPositiveNumber(value)) {
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（带错误码）
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（带错误码）。
      *
-     * @param value   待校验数值
+     * @param value   待校验数值，为 null 时视为断言失败
+     * @param code    错误码
      * @param message 错误消息
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
      * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, int code, String message) {
-        if (value == null || value.doubleValue() <= 0L) {
+        if (value == null || !isPositiveNumber(value)) {
             throw newException(code, message);
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（带错误码 + 占位符消息）
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（带错误码 + 占位符参数）。
+     *
+     * @param value   待校验数值，为 null 时视为断言失败
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, int code, String message, Object... args) {
-        if (value == null || value.doubleValue() <= 0L) {
+        if (value == null || !isPositiveNumber(value)) {
             throw newException(code, formatMessage(message, args));
         }
         return value;
     }
 
+    /**
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（错误枚举）。
+     *
+     * @param value     待校验数值，为 null 时视为断言失败
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param <T>       数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
+     */
     public static <T extends Number> T isPositive(T value, IErrorCode errorCode) {
-        if (value == null || value.doubleValue() <= 0L) {
+        if (value == null || !isPositiveNumber(value)) {
             throw newException(errorCode.getCode(), errorCode.getMessage());
         }
         return value;
     }
 
+    /**
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（错误枚举 + 占位符参数）。
+     *
+     * @param value     待校验数值，为 null 时视为断言失败
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param args      占位符参数
+     * @param <T>       数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
+     */
     public static <T extends Number> T isPositive(T value, IErrorCode errorCode, Object... args) {
-        if (value == null || value.doubleValue() <= 0L) {
+        if (value == null || !isPositiveNumber(value)) {
             throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 默认消息）
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（指定异常工厂 + 默认消息）。
+     *
+     * @param value   待校验数值，为 null 时视为断言失败
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, ExceptionFactory factory) {
-        if (value == null || value.doubleValue() <= 0L) {
-            throw newException(ErrorCodes.UNSPECIFIED, "value must be positive", factory);
-        }
-        return value;
+        return isPositive(value, "value must be positive", factory);
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂）
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（指定异常工厂）。
      *
-     * @param value   待校验数值
+     * @param value   待校验数值，为 null 时视为断言失败
      * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
      * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, String message, ExceptionFactory factory) {
-        if (value == null || value.doubleValue() <= 0L) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        if (value == null || !isPositiveNumber(value)) {
+            throw newException(message, factory);
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 占位符参数）
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（指定异常工厂 + 占位符参数）。
+     *
+     * @param value   待校验数值，为 null 时视为断言失败
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, String message, ExceptionFactory factory, Object... args) {
-        if (value == null || value.doubleValue() <= 0L) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        if (value == null || !isPositiveNumber(value)) {
+            throw newException(formatMessage(message, args), factory);
         }
         return value;
     }
 
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 带错误码）
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（指定异常工厂 + 带错误码）。
      *
-     * @param value   待校验数值
+     * @param value   待校验数值，为 null 时视为断言失败
+     * @param code    错误码
      * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
      * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, int code, String message, ExceptionFactory factory) {
-        if (value == null || value.doubleValue() <= 0L) {
+        if (value == null || !isPositiveNumber(value)) {
             throw newException(code, message, factory);
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 带错误码 + 占位符消息）
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（指定异常工厂 + 带错误码 + 占位符参数）。
+     *
+     * @param value   待校验数值，为 null 时视为断言失败
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, int code, String message, ExceptionFactory factory, Object... args) {
-        if (value == null || value.doubleValue() <= 0L) {
+        if (value == null || !isPositiveNumber(value)) {
             throw newException(code, formatMessage(message, args), factory);
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 错误枚举）
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（指定异常工厂 + 错误枚举）。
+     *
+     * @param value     待校验数值，为 null 时视为断言失败
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param <T>       数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, IErrorCode errorCode, ExceptionFactory factory) {
-        if (value == null || value.doubleValue() <= 0L) {
+        if (value == null || !isPositiveNumber(value)) {
             throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（指定异常工厂 + 错误枚举 + 占位符参数）
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param value     待校验数值，为 null 时视为断言失败
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @param <T>       数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositive(T value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
-        if (value == null || value.doubleValue() <= 0L) {
+        if (value == null || !isPositiveNumber(value)) {
             throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（指直接传入异常实例）
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（直接传入异常实例）。
+     *
+     * @param value             待校验数值，为 null 时视为断言失败
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @param <T>               数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}，抛出由 exceptionSupplier 提供的异常
      */
     public static <T extends Number> T isPositiveOrThrow(T value, Supplier<? extends RuntimeException> exceptionSupplier) {
-        if (value == null || value.doubleValue() <= 0L) {
+        if (value == null || !isPositiveNumber(value)) {
             throw nullSafeGetException(exceptionSupplier);
         }
         return value;
     }
 
-
+    /**
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（label 机制）。
+     * <p>自动生成消息：{label} must be positive</p>
+     *
+     * @param value 待校验数值，为 null 时视为断言失败
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @param <T>   数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
+     */
     public static <T extends Number> T isPositiveAs(T value, String label) {
-        if (value == null || value.doubleValue() <= 0L) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be positive");
+        if (value == null || !isPositiveNumber(value)) {
+            throw newException(label + " must be positive");
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（带错误码）
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（label 机制 + 错误码）。
+     *
+     * @param value 待校验数值，为 null 时视为断言失败
+     * @param code  错误码
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @param <T>   数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositiveAs(T value, int code, String label) {
-        if (value == null || value.doubleValue() <= 0L) {
+        if (value == null || !isPositiveNumber(value)) {
             throw newException(code, label + " must be positive");
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（label 机制 + 指定异常工厂）
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（label 机制 + 指定异常工厂）。
+     *
+     * @param value   待校验数值，为 null 时视为断言失败
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositiveAs(T value, String label, ExceptionFactory factory) {
-        if (value == null || value.doubleValue() <= 0L) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be positive", factory);
+        if (value == null || !isPositiveNumber(value)) {
+            throw newException(label + " must be positive", factory);
         }
         return value;
     }
 
     /**
-     * 断言数值为正数（> 0）（label 机制 + 错误码 + 指定异常工厂）
+     * 断言泛型 {@link Number} 数值为正数（{@code > 0}）（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param value   待校验数值，为 null 时视为断言失败
+     * @param code    错误码
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     数值类型，必须为 {@link Number} 的子类
+     * @return 原数值
+     * @throws RuntimeException 若数值为 null 或 {@code <= 0}
      */
     public static <T extends Number> T isPositiveAs(T value, int code, String label, ExceptionFactory factory) {
-        if (value == null || value.doubleValue() <= 0L) {
+        if (value == null || !isPositiveNumber(value)) {
             throw newException(code, label + " must be positive", factory);
         }
         return value;
@@ -3072,7 +4984,7 @@ public final class BizAssert {
      */
     public static int isNonNegative(int value, String message) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return value;
     }
@@ -3088,7 +5000,7 @@ public final class BizAssert {
      */
     public static int isNonNegative(int value, String message, Object... args) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return value;
     }
@@ -3103,7 +5015,7 @@ public final class BizAssert {
      */
     public static int isNonNegative(int value, Supplier<String> messageSupplier) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return value;
     }
@@ -3119,7 +5031,7 @@ public final class BizAssert {
      */
     public static int isNonNegative(int value, Supplier<String> messageSupplier, Object... args) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
@@ -3198,7 +5110,7 @@ public final class BizAssert {
      */
     public static int isNonNegative(int value, ExceptionFactory factory) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, "value must be non-negative", factory);
+            throw newException("value must be non-negative", factory);
         }
         return value;
     }
@@ -3214,7 +5126,7 @@ public final class BizAssert {
      */
     public static int isNonNegative(int value, String message, ExceptionFactory factory) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return value;
     }
@@ -3231,7 +5143,7 @@ public final class BizAssert {
      */
     public static int isNonNegative(int value, String message, ExceptionFactory factory, Object... args) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return value;
     }
@@ -3329,7 +5241,7 @@ public final class BizAssert {
      */
     public static int isNonNegativeAs(int value, String label) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be non-negative");
+            throw newException(label + " must be non-negative");
         }
         return value;
     }
@@ -3361,7 +5273,7 @@ public final class BizAssert {
      */
     public static int isNonNegativeAs(int value, String label, ExceptionFactory factory) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be non-negative", factory);
+            throw newException(label + " must be non-negative", factory);
         }
         return value;
     }
@@ -3407,7 +5319,7 @@ public final class BizAssert {
      */
     public static long isNonNegative(long value, String message) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return value;
     }
@@ -3423,7 +5335,7 @@ public final class BizAssert {
      */
     public static long isNonNegative(long value, String message, Object... args) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return value;
     }
@@ -3438,7 +5350,7 @@ public final class BizAssert {
      */
     public static long isNonNegative(long value, Supplier<String> messageSupplier) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return value;
     }
@@ -3454,7 +5366,7 @@ public final class BizAssert {
      */
     public static long isNonNegative(long value, Supplier<String> messageSupplier, Object... args) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
@@ -3533,7 +5445,7 @@ public final class BizAssert {
      */
     public static long isNonNegative(long value, ExceptionFactory factory) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, "value must be non-negative", factory);
+            throw newException("value must be non-negative", factory);
         }
         return value;
     }
@@ -3549,7 +5461,7 @@ public final class BizAssert {
      */
     public static long isNonNegative(long value, String message, ExceptionFactory factory) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return value;
     }
@@ -3566,7 +5478,7 @@ public final class BizAssert {
      */
     public static long isNonNegative(long value, String message, ExceptionFactory factory, Object... args) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return value;
     }
@@ -3664,7 +5576,7 @@ public final class BizAssert {
      */
     public static long isNonNegativeAs(long value, String label) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be non-negative");
+            throw newException(label + " must be non-negative");
         }
         return value;
     }
@@ -3696,7 +5608,7 @@ public final class BizAssert {
      */
     public static long isNonNegativeAs(long value, String label, ExceptionFactory factory) {
         if (value < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be non-negative", factory);
+            throw newException(label + " must be non-negative", factory);
         }
         return value;
     }
@@ -3745,8 +5657,8 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, String message) {
-        if (value == null || value.doubleValue() < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+        if (value == null || !isNonNegativeNumber(value)) {
+            throw newException(message);
         }
         return value;
     }
@@ -3762,8 +5674,8 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, String message, Object... args) {
-        if (value == null || value.doubleValue() < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        if (value == null || !isNonNegativeNumber(value)) {
+            throw newException(formatMessage(message, args));
         }
         return value;
     }
@@ -3778,8 +5690,8 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, Supplier<String> messageSupplier) {
-        if (value == null || value.doubleValue() < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+        if (value == null || !isNonNegativeNumber(value)) {
+            throw newException(nullSafeGet(messageSupplier));
         }
         return value;
     }
@@ -3795,8 +5707,8 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, Supplier<String> messageSupplier, Object... args) {
-        if (value == null || value.doubleValue() < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+        if (value == null || !isNonNegativeNumber(value)) {
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
@@ -3812,7 +5724,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, int code, String message) {
-        if (value == null || value.doubleValue() < 0) {
+        if (value == null || !isNonNegativeNumber(value)) {
             throw newException(code, message);
         }
         return value;
@@ -3830,7 +5742,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, int code, String message, Object... args) {
-        if (value == null || value.doubleValue() < 0) {
+        if (value == null || !isNonNegativeNumber(value)) {
             throw newException(code, formatMessage(message, args));
         }
         return value;
@@ -3846,7 +5758,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, IErrorCode errorCode) {
-        if (value == null || value.doubleValue() < 0) {
+        if (value == null || !isNonNegativeNumber(value)) {
             throw newException(errorCode.getCode(), errorCode.getMessage());
         }
         return value;
@@ -3863,7 +5775,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, IErrorCode errorCode, Object... args) {
-        if (value == null || value.doubleValue() < 0) {
+        if (value == null || !isNonNegativeNumber(value)) {
             throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
         }
         return value;
@@ -3879,8 +5791,8 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, ExceptionFactory factory) {
-        if (value == null || value.doubleValue() < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, "value must be non-negative", factory);
+        if (value == null || !isNonNegativeNumber(value)) {
+            throw newException("value must be non-negative", factory);
         }
         return value;
     }
@@ -3896,8 +5808,8 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, String message, ExceptionFactory factory) {
-        if (value == null || value.doubleValue() < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        if (value == null || !isNonNegativeNumber(value)) {
+            throw newException(message, factory);
         }
         return value;
     }
@@ -3914,8 +5826,8 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, String message, ExceptionFactory factory, Object... args) {
-        if (value == null || value.doubleValue() < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        if (value == null || !isNonNegativeNumber(value)) {
+            throw newException(formatMessage(message, args), factory);
         }
         return value;
     }
@@ -3932,7 +5844,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, int code, String message, ExceptionFactory factory) {
-        if (value == null || value.doubleValue() < 0) {
+        if (value == null || !isNonNegativeNumber(value)) {
             throw newException(code, message, factory);
         }
         return value;
@@ -3951,7 +5863,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, int code, String message, ExceptionFactory factory, Object... args) {
-        if (value == null || value.doubleValue() < 0) {
+        if (value == null || !isNonNegativeNumber(value)) {
             throw newException(code, formatMessage(message, args), factory);
         }
         return value;
@@ -3968,7 +5880,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, IErrorCode errorCode, ExceptionFactory factory) {
-        if (value == null || value.doubleValue() < 0) {
+        if (value == null || !isNonNegativeNumber(value)) {
             throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
         }
         return value;
@@ -3986,7 +5898,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegative(T value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
-        if (value == null || value.doubleValue() < 0) {
+        if (value == null || !isNonNegativeNumber(value)) {
             throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
         }
         return value;
@@ -4002,7 +5914,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0，抛出由 exceptionSupplier 提供的异常
      */
     public static <T extends Number> T isNonNegativeOrThrow(T value, Supplier<? extends RuntimeException> exceptionSupplier) {
-        if (value == null || value.doubleValue() < 0) {
+        if (value == null || !isNonNegativeNumber(value)) {
             throw nullSafeGetException(exceptionSupplier);
         }
         return value;
@@ -4018,8 +5930,8 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegativeAs(T value, String label) {
-        if (value == null || value.doubleValue() < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be non-negative");
+        if (value == null || !isNonNegativeNumber(value)) {
+            throw newException(label + " must be non-negative");
         }
         return value;
     }
@@ -4035,7 +5947,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegativeAs(T value, int code, String label) {
-        if (value == null || value.doubleValue() < 0) {
+        if (value == null || !isNonNegativeNumber(value)) {
             throw newException(code, label + " must be non-negative");
         }
         return value;
@@ -4052,8 +5964,8 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegativeAs(T value, String label, ExceptionFactory factory) {
-        if (value == null || value.doubleValue() < 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be non-negative", factory);
+        if (value == null || !isNonNegativeNumber(value)) {
+            throw newException(label + " must be non-negative", factory);
         }
         return value;
     }
@@ -4070,7 +5982,7 @@ public final class BizAssert {
      * @throws RuntimeException 若数值 < 0
      */
     public static <T extends Number> T isNonNegativeAs(T value, int code, String label, ExceptionFactory factory) {
-        if (value == null || value.doubleValue() < 0) {
+        if (value == null || !isNonNegativeNumber(value)) {
             throw newException(code, label + " must be non-negative", factory);
         }
         return value;
@@ -4101,7 +6013,7 @@ public final class BizAssert {
      */
     public static int isBetween(int value, int min, int max, String message) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return value;
     }
@@ -4118,7 +6030,7 @@ public final class BizAssert {
      */
     public static int isBetween(int value, int min, int max, String message, Object... args) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return value;
     }
@@ -4134,7 +6046,7 @@ public final class BizAssert {
      */
     public static int isBetween(int value, int min, int max, Supplier<String> messageSupplier) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return value;
     }
@@ -4151,7 +6063,7 @@ public final class BizAssert {
      */
     public static int isBetween(int value, int min, int max, Supplier<String> messageSupplier, Object... args) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
@@ -4235,7 +6147,7 @@ public final class BizAssert {
      */
     public static int isBetween(int value, int min, int max, ExceptionFactory factory) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, "value must be between " + min + " and " + max + ", but was " + value, factory);
+            throw newException("value must be between " + min + " and " + max + ", but was " + value, factory);
         }
         return value;
     }
@@ -4252,7 +6164,7 @@ public final class BizAssert {
      */
     public static int isBetween(int value, int min, int max, String message, ExceptionFactory factory) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return value;
     }
@@ -4270,7 +6182,7 @@ public final class BizAssert {
      */
     public static int isBetween(int value, int min, int max, String message, ExceptionFactory factory, Object... args) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return value;
     }
@@ -4374,7 +6286,7 @@ public final class BizAssert {
      */
     public static int isBetweenAs(int value, int min, int max, String label) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be between " + min + " and " + max + ", but was " + value);
+            throw newException(label + " must be between " + min + " and " + max + ", but was " + value);
         }
         return value;
     }
@@ -4408,7 +6320,7 @@ public final class BizAssert {
      */
     public static int isBetweenAs(int value, int min, int max, String label, ExceptionFactory factory) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be between " + min + " and " + max + ", but was " + value, factory);
+            throw newException(label + " must be between " + min + " and " + max + ", but was " + value, factory);
         }
         return value;
     }
@@ -4457,7 +6369,7 @@ public final class BizAssert {
      */
     public static long isBetween(long value, long min, long max, String message) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return value;
     }
@@ -4474,7 +6386,7 @@ public final class BizAssert {
      */
     public static long isBetween(long value, long min, long max, String message, Object... args) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return value;
     }
@@ -4490,7 +6402,7 @@ public final class BizAssert {
      */
     public static long isBetween(long value, long min, long max, Supplier<String> messageSupplier) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return value;
     }
@@ -4507,7 +6419,7 @@ public final class BizAssert {
      */
     public static long isBetween(long value, long min, long max, Supplier<String> messageSupplier, Object... args) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
@@ -4591,7 +6503,7 @@ public final class BizAssert {
      */
     public static long isBetween(long value, long min, long max, ExceptionFactory factory) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, "value must be between " + min + " and " + max + ", but was " + value, factory);
+            throw newException("value must be between " + min + " and " + max + ", but was " + value, factory);
         }
         return value;
     }
@@ -4608,7 +6520,7 @@ public final class BizAssert {
      */
     public static long isBetween(long value, long min, long max, String message, ExceptionFactory factory) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return value;
     }
@@ -4626,7 +6538,7 @@ public final class BizAssert {
      */
     public static long isBetween(long value, long min, long max, String message, ExceptionFactory factory, Object... args) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return value;
     }
@@ -4730,7 +6642,7 @@ public final class BizAssert {
      */
     public static long isBetweenAs(long value, long min, long max, String label) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be between " + min + " and " + max + ", but was " + value);
+            throw newException(label + " must be between " + min + " and " + max + ", but was " + value);
         }
         return value;
     }
@@ -4764,7 +6676,7 @@ public final class BizAssert {
      */
     public static long isBetweenAs(long value, long min, long max, String label, ExceptionFactory factory) {
         if (value < min || value > max) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be between " + min + " and " + max + ", but was " + value, factory);
+            throw newException(label + " must be between " + min + " and " + max + ", but was " + value, factory);
         }
         return value;
     }
@@ -4817,7 +6729,7 @@ public final class BizAssert {
      */
     public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, String message) {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return value;
     }
@@ -4835,7 +6747,7 @@ public final class BizAssert {
      */
     public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, String message, Object... args) {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return value;
     }
@@ -4852,7 +6764,7 @@ public final class BizAssert {
      */
     public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, Supplier<String> messageSupplier) {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return value;
     }
@@ -4870,7 +6782,7 @@ public final class BizAssert {
      */
     public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, Supplier<String> messageSupplier, Object... args) {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
@@ -4959,7 +6871,7 @@ public final class BizAssert {
      */
     public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, ExceptionFactory factory) {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, "value must be between " + min + " and " + max + ", but was " + value, factory);
+            throw newException("value must be between " + min + " and " + max + ", but was " + value, factory);
         }
         return value;
     }
@@ -4977,7 +6889,7 @@ public final class BizAssert {
      */
     public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, String message, ExceptionFactory factory) {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return value;
     }
@@ -4996,7 +6908,7 @@ public final class BizAssert {
      */
     public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, String message, ExceptionFactory factory, Object... args) {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return value;
     }
@@ -5106,7 +7018,7 @@ public final class BizAssert {
      */
     public static <T extends Number & Comparable<T>> T isBetweenAs(T value, T min, T max, String label) {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be between " + min + " and " + max + ", but was " + value);
+            throw newException(label + " must be between " + min + " and " + max + ", but was " + value);
         }
         return value;
     }
@@ -5142,7 +7054,7 @@ public final class BizAssert {
      */
     public static <T extends Number & Comparable<T>> T isBetweenAs(T value, T min, T max, String label, ExceptionFactory factory) {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must be between " + min + " and " + max + ", but was " + value, factory);
+            throw newException(label + " must be between " + min + " and " + max + ", but was " + value, factory);
         }
         return value;
     }
@@ -5192,7 +7104,7 @@ public final class BizAssert {
     public static String matches(String text, String regex, String message) {
         notNull(text, message);
         if (!text.matches(regex)) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return text;
     }
@@ -5209,7 +7121,7 @@ public final class BizAssert {
     public static String matches(String text, String regex, String message, Object... args) {
         notNull(text, message, args);
         if (!text.matches(regex)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return text;
     }
@@ -5225,7 +7137,7 @@ public final class BizAssert {
     public static String matches(String text, String regex, Supplier<String> messageSupplier) {
         notNull(text, messageSupplier);
         if (!text.matches(regex)) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return text;
     }
@@ -5242,7 +7154,7 @@ public final class BizAssert {
     public static String matches(String text, String regex, Supplier<String> messageSupplier, Object... args) {
         notNull(text, messageSupplier, args);
         if (!text.matches(regex)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return text;
     }
@@ -5326,7 +7238,7 @@ public final class BizAssert {
     public static String matches(String text, String regex, ExceptionFactory factory) {
         notNull(text, factory);
         if (!text.matches(regex)) {
-            throw newException(ErrorCodes.UNSPECIFIED, "text must match regex: " + regex, factory);
+            throw newException("text must match regex: " + regex, factory);
         }
         return text;
     }
@@ -5343,7 +7255,7 @@ public final class BizAssert {
     public static String matches(String text, String regex, String message, ExceptionFactory factory) {
         notNull(text, message, factory);
         if (!text.matches(regex)) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return text;
     }
@@ -5361,7 +7273,7 @@ public final class BizAssert {
     public static String matches(String text, String regex, String message, ExceptionFactory factory, Object... args) {
         notNull(text, message, factory, args);
         if (!text.matches(regex)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return text;
     }
@@ -5464,7 +7376,7 @@ public final class BizAssert {
     public static String matchesAs(String text, String regex, String label) {
         notNullAs(text, label);
         if (!text.matches(regex)) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must match regex: " + regex);
+            throw newException(label + " must match regex: " + regex);
         }
         return text;
     }
@@ -5498,7 +7410,7 @@ public final class BizAssert {
     public static String matchesAs(String text, String regex, String label, ExceptionFactory factory) {
         notNullAs(text, label, factory);
         if (!text.matches(regex)) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must match regex: " + regex, factory);
+            throw newException(label + " must match regex: " + regex, factory);
         }
         return text;
     }
@@ -5547,7 +7459,7 @@ public final class BizAssert {
      */
     public static String doesNotContain(String text, String substring, String message) {
         if (text != null && substring != null && text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return text;
     }
@@ -5563,7 +7475,7 @@ public final class BizAssert {
      */
     public static String doesNotContain(String text, String substring, String message, Object... args) {
         if (text != null && substring != null && text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return text;
     }
@@ -5578,7 +7490,7 @@ public final class BizAssert {
      */
     public static String doesNotContain(String text, String substring, Supplier<String> messageSupplier) {
         if (text != null && substring != null && text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return text;
     }
@@ -5594,7 +7506,7 @@ public final class BizAssert {
      */
     public static String doesNotContain(String text, String substring, Supplier<String> messageSupplier, Object... args) {
         if (text != null && substring != null && text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return text;
     }
@@ -5673,7 +7585,7 @@ public final class BizAssert {
      */
     public static String doesNotContain(String text, String substring, ExceptionFactory factory) {
         if (text != null && substring != null && text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, "text must not contain: " + substring, factory);
+            throw newException("text must not contain: " + substring, factory);
         }
         return text;
     }
@@ -5689,7 +7601,7 @@ public final class BizAssert {
      */
     public static String doesNotContain(String text, String substring, String message, ExceptionFactory factory) {
         if (text != null && substring != null && text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return text;
     }
@@ -5706,7 +7618,7 @@ public final class BizAssert {
      */
     public static String doesNotContain(String text, String substring, String message, ExceptionFactory factory, Object... args) {
         if (text != null && substring != null && text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return text;
     }
@@ -5804,7 +7716,7 @@ public final class BizAssert {
      */
     public static String doesNotContainAs(String text, String substring, String label) {
         if (text != null && substring != null && text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must not contain: " + substring);
+            throw newException(label + " must not contain: " + substring);
         }
         return text;
     }
@@ -5836,7 +7748,7 @@ public final class BizAssert {
      */
     public static String doesNotContainAs(String text, String substring, String label, ExceptionFactory factory) {
         if (text != null && substring != null && text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must not contain: " + substring, factory);
+            throw newException(label + " must not contain: " + substring, factory);
         }
         return text;
     }
@@ -5885,7 +7797,7 @@ public final class BizAssert {
     public static String contains(String text, String substring, String message) {
         notNull(text, message);
         if (substring != null && !text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return text;
     }
@@ -5902,7 +7814,7 @@ public final class BizAssert {
     public static String contains(String text, String substring, String message, Object... args) {
         notNull(text, message, args);
         if (substring != null && !text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return text;
     }
@@ -5918,7 +7830,7 @@ public final class BizAssert {
     public static String contains(String text, String substring, Supplier<String> messageSupplier) {
         notNull(text, messageSupplier);
         if (substring != null && !text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return text;
     }
@@ -5935,7 +7847,7 @@ public final class BizAssert {
     public static String contains(String text, String substring, Supplier<String> messageSupplier, Object... args) {
         notNull(text, formatMessage(nullSafeGet(messageSupplier), args));
         if (substring != null && !text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return text;
     }
@@ -6019,7 +7931,7 @@ public final class BizAssert {
     public static String contains(String text, String substring, ExceptionFactory factory) {
         notNull(text, "text must contain: " + substring, factory);
         if (substring != null && !text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, "text must contain: " + substring, factory);
+            throw newException("text must contain: " + substring, factory);
         }
         return text;
     }
@@ -6036,7 +7948,7 @@ public final class BizAssert {
     public static String contains(String text, String substring, String message, ExceptionFactory factory) {
         notNull(text, message, factory);
         if (substring != null && !text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return text;
     }
@@ -6054,7 +7966,7 @@ public final class BizAssert {
     public static String contains(String text, String substring, String message, ExceptionFactory factory, Object... args) {
         notNull(text, formatMessage(message, args), factory);
         if (substring != null && !text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return text;
     }
@@ -6157,7 +8069,7 @@ public final class BizAssert {
     public static String containsAs(String text, String substring, String label) {
         notNull(text, label + " must not be null");
         if (substring != null && !text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must contain: " + substring);
+            throw newException(label + " must contain: " + substring);
         }
         return text;
     }
@@ -6191,7 +8103,7 @@ public final class BizAssert {
     public static String containsAs(String text, String substring, String label, ExceptionFactory factory) {
         notNull(text, label + " must not be null", factory);
         if (substring != null && !text.contains(substring)) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must contain: " + substring, factory);
+            throw newException(label + " must contain: " + substring, factory);
         }
         return text;
     }
@@ -6241,7 +8153,7 @@ public final class BizAssert {
     public static String startsWith(String text, String prefix, String message) {
         notNull(text, message);
         if (prefix != null && !text.startsWith(prefix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return text;
     }
@@ -6258,7 +8170,7 @@ public final class BizAssert {
     public static String startsWith(String text, String prefix, String message, Object... args) {
         notNull(text, formatMessage(message, args));
         if (prefix != null && !text.startsWith(prefix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return text;
     }
@@ -6274,7 +8186,7 @@ public final class BizAssert {
     public static String startsWith(String text, String prefix, Supplier<String> messageSupplier) {
         notNull(text, messageSupplier);
         if (prefix != null && !text.startsWith(prefix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return text;
     }
@@ -6291,7 +8203,7 @@ public final class BizAssert {
     public static String startsWith(String text, String prefix, Supplier<String> messageSupplier, Object... args) {
         notNull(text, formatMessage(nullSafeGet(messageSupplier), args));
         if (prefix != null && !text.startsWith(prefix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return text;
     }
@@ -6375,7 +8287,7 @@ public final class BizAssert {
     public static String startsWith(String text, String prefix, ExceptionFactory factory) {
         notNull(text, "text must start with: " + prefix, factory);
         if (prefix != null && !text.startsWith(prefix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, "text must start with: " + prefix, factory);
+            throw newException("text must start with: " + prefix, factory);
         }
         return text;
     }
@@ -6392,7 +8304,7 @@ public final class BizAssert {
     public static String startsWith(String text, String prefix, String message, ExceptionFactory factory) {
         notNull(text, message, factory);
         if (prefix != null && !text.startsWith(prefix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return text;
     }
@@ -6410,7 +8322,7 @@ public final class BizAssert {
     public static String startsWith(String text, String prefix, String message, ExceptionFactory factory, Object... args) {
         notNull(text, formatMessage(message, args), factory);
         if (prefix != null && !text.startsWith(prefix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return text;
     }
@@ -6513,7 +8425,7 @@ public final class BizAssert {
     public static String startsWithAs(String text, String prefix, String label) {
         notNull(text, label + " must not be null");
         if (prefix != null && !text.startsWith(prefix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must start with: " + prefix);
+            throw newException(label + " must start with: " + prefix);
         }
         return text;
     }
@@ -6547,7 +8459,7 @@ public final class BizAssert {
     public static String startsWithAs(String text, String prefix, String label, ExceptionFactory factory) {
         notNull(text, label + " must not be null", factory);
         if (prefix != null && !text.startsWith(prefix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must start with: " + prefix, factory);
+            throw newException(label + " must start with: " + prefix, factory);
         }
         return text;
     }
@@ -6597,7 +8509,7 @@ public final class BizAssert {
     public static String endsWith(String text, String suffix, String message) {
         notNull(text, message);
         if (suffix != null && !text.endsWith(suffix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
+            throw newException(message);
         }
         return text;
     }
@@ -6614,7 +8526,7 @@ public final class BizAssert {
     public static String endsWith(String text, String suffix, String message, Object... args) {
         notNull(text, formatMessage(message, args));
         if (suffix != null && !text.endsWith(suffix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+            throw newException(formatMessage(message, args));
         }
         return text;
     }
@@ -6630,7 +8542,7 @@ public final class BizAssert {
     public static String endsWith(String text, String suffix, Supplier<String> messageSupplier) {
         notNull(text, messageSupplier);
         if (suffix != null && !text.endsWith(suffix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+            throw newException(nullSafeGet(messageSupplier));
         }
         return text;
     }
@@ -6647,7 +8559,7 @@ public final class BizAssert {
     public static String endsWith(String text, String suffix, Supplier<String> messageSupplier, Object... args) {
         notNull(text, formatMessage(nullSafeGet(messageSupplier), args));
         if (suffix != null && !text.endsWith(suffix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
         }
         return text;
     }
@@ -6731,7 +8643,7 @@ public final class BizAssert {
     public static String endsWith(String text, String suffix, ExceptionFactory factory) {
         notNull(text, "text must end with: " + suffix, factory);
         if (suffix != null && !text.endsWith(suffix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, "text must end with: " + suffix, factory);
+            throw newException("text must end with: " + suffix, factory);
         }
         return text;
     }
@@ -6748,7 +8660,7 @@ public final class BizAssert {
     public static String endsWith(String text, String suffix, String message, ExceptionFactory factory) {
         notNull(text, message, factory);
         if (suffix != null && !text.endsWith(suffix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+            throw newException(message, factory);
         }
         return text;
     }
@@ -6766,7 +8678,7 @@ public final class BizAssert {
     public static String endsWith(String text, String suffix, String message, ExceptionFactory factory, Object... args) {
         notNull(text, formatMessage(message, args), factory);
         if (suffix != null && !text.endsWith(suffix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+            throw newException(formatMessage(message, args), factory);
         }
         return text;
     }
@@ -6869,7 +8781,7 @@ public final class BizAssert {
     public static String endsWithAs(String text, String suffix, String label) {
         notNull(text, label + " must not be null");
         if (suffix != null && !text.endsWith(suffix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must end with: " + suffix);
+            throw newException(label + " must end with: " + suffix);
         }
         return text;
     }
@@ -6903,7 +8815,7 @@ public final class BizAssert {
     public static String endsWithAs(String text, String suffix, String label, ExceptionFactory factory) {
         notNull(text, label + " must not be null", factory);
         if (suffix != null && !text.endsWith(suffix)) {
-            throw newException(ErrorCodes.UNSPECIFIED, label + " must end with: " + suffix, factory);
+            throw newException(label + " must end with: " + suffix, factory);
         }
         return text;
     }
@@ -6953,7 +8865,7 @@ public final class BizAssert {
         notNull(collection, message);
         for (E element : collection) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, message);
+                throw newException(message);
             }
         }
         return collection;
@@ -6973,7 +8885,7 @@ public final class BizAssert {
         notNull(collection, message, args);
         for (E element : collection) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+                throw newException(formatMessage(message, args));
             }
         }
         return collection;
@@ -6992,7 +8904,7 @@ public final class BizAssert {
         notNull(collection, messageSupplier);
         for (E element : collection) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+                throw newException(nullSafeGet(messageSupplier));
             }
         }
         return collection;
@@ -7012,7 +8924,7 @@ public final class BizAssert {
         notNull(collection, messageSupplier, args);
         for (E element : collection) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+                throw newException(formatMessage(nullSafeGet(messageSupplier), args));
             }
         }
         return collection;
@@ -7111,7 +9023,7 @@ public final class BizAssert {
         notNull(collection, factory);
         for (E element : collection) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, "collection must not contain null elements", factory);
+                throw newException("collection must not contain null elements", factory);
             }
         }
         return collection;
@@ -7131,7 +9043,7 @@ public final class BizAssert {
         notNull(collection, message, factory);
         for (E element : collection) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+                throw newException(message, factory);
             }
         }
         return collection;
@@ -7152,7 +9064,7 @@ public final class BizAssert {
         notNull(collection, message, factory, args);
         for (E element : collection) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+                throw newException(formatMessage(message, args), factory);
             }
         }
         return collection;
@@ -7274,7 +9186,7 @@ public final class BizAssert {
         notNull(collection, label + " must not be null");
         for (E element : collection) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, label + " must not contain null elements");
+                throw newException(label + " must not contain null elements");
             }
         }
         return collection;
@@ -7314,7 +9226,7 @@ public final class BizAssert {
         notNull(collection, label + " must not be null", factory);
         for (E element : collection) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, label + " must not contain null elements", factory);
+                throw newException(label + " must not contain null elements", factory);
             }
         }
         return collection;
@@ -7367,7 +9279,7 @@ public final class BizAssert {
         notNull(array, message);
         for (T element : array) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, message);
+                throw newException(message);
             }
         }
         return array;
@@ -7386,7 +9298,7 @@ public final class BizAssert {
         notNull(array, message, args);
         for (T element : array) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+                throw newException(formatMessage(message, args));
             }
         }
         return array;
@@ -7404,7 +9316,7 @@ public final class BizAssert {
         notNull(array, messageSupplier);
         for (T element : array) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
+                throw newException(nullSafeGet(messageSupplier));
             }
         }
         return array;
@@ -7423,7 +9335,7 @@ public final class BizAssert {
         notNull(array, messageSupplier, args);
         for (T element : array) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
+                throw newException(formatMessage(nullSafeGet(messageSupplier), args));
             }
         }
         return array;
@@ -7517,7 +9429,7 @@ public final class BizAssert {
         notNull(array, factory);
         for (T element : array) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, "array must not contain null elements", factory);
+                throw newException("array must not contain null elements", factory);
             }
         }
         return array;
@@ -7536,7 +9448,7 @@ public final class BizAssert {
         notNull(array, message, factory);
         for (T element : array) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+                throw newException(message, factory);
             }
         }
         return array;
@@ -7556,7 +9468,7 @@ public final class BizAssert {
         notNull(array, message, factory, args);
         for (T element : array) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+                throw newException(formatMessage(message, args), factory);
             }
         }
         return array;
@@ -7672,7 +9584,7 @@ public final class BizAssert {
         notNull(array, label + " must not be null");
         for (T element : array) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, label + " must not contain null elements");
+                throw newException(label + " must not contain null elements");
             }
         }
         return array;
@@ -7710,7 +9622,7 @@ public final class BizAssert {
         notNull(array, label + " must not be null", factory);
         for (T element : array) {
             if (element == null) {
-                throw newException(ErrorCodes.UNSPECIFIED, label + " must not contain null elements", factory);
+                throw newException(label + " must not contain null elements", factory);
             }
         }
         return array;
@@ -7741,127 +9653,260 @@ public final class BizAssert {
     // ========================================================================
 
     /**
-     * 断言状态条件为 true
-     * <p>语义上用于校验对象状态，与 isTrue（参数校验）区分</p>
+     * 断言状态条件为 true（无消息，使用默认消息 "state check failed"）。
+     * <p>语义上用于校验对象/业务状态，与 {@link #isTrue} （参数校验）区分，便于在代码中表达不同的校验意图。</p>
+     *
+     * @param expression 状态条件表达式
+     * @throws RuntimeException 若表达式为 false
      */
     public static void state(boolean expression) {
-        state(expression, "state check failed");
+        isTrue(expression, "state check failed");
     }
 
+    /**
+     * 断言状态条件为 true。
+     *
+     * @param expression 状态条件表达式
+     * @param message    错误消息
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void state(boolean expression, String message) {
-        if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, message);
-        }
+        isTrue(expression, message);
     }
 
+    /**
+     * 断言状态条件为 true（占位符消息）。
+     *
+     * @param expression 状态条件表达式
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void state(boolean expression, String message, Object... args) {
-        if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
-        }
+        isTrue(expression, message, args);
     }
 
+    /**
+     * 断言状态条件为 true（延迟构建消息）。
+     *
+     * @param expression      状态条件表达式
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void state(boolean expression, Supplier<String> messageSupplier) {
-        if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, nullSafeGet(messageSupplier));
-        }
+        isTrue(expression, messageSupplier);
     }
 
+    /**
+     * 断言状态条件为 true（延迟构建消息 + 占位符参数）。
+     *
+     * @param expression      状态条件表达式
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void state(boolean expression, Supplier<String> messageSupplier, Object... args) {
-        if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(nullSafeGet(messageSupplier), args));
-        }
+        isTrue(expression, messageSupplier, args);
     }
 
+    /**
+     * 断言状态条件为 true（带错误码）。
+     *
+     * @param expression 状态条件表达式
+     * @param code       错误码
+     * @param message    错误消息
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void state(boolean expression, int code, String message) {
-        if (!expression) {
-            throw newException(code, message);
-        }
+        isTrue(expression, code, message);
     }
 
+    /**
+     * 断言状态条件为 true（带错误码 + 占位符参数）。
+     *
+     * @param expression 状态条件表达式
+     * @param code       错误码
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void state(boolean expression, int code, String message, Object... args) {
-        if (!expression) {
-            throw newException(code, formatMessage(message, args));
-        }
+        isTrue(expression, code, message, args);
     }
 
+    /**
+     * 断言状态条件为 true（错误枚举）。
+     *
+     * @param expression 状态条件表达式
+     * @param errorCode  错误枚举，包含错误码与错误消息
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void state(boolean expression, IErrorCode errorCode) {
-        if (!expression) {
-            throw newException(errorCode.getCode(), errorCode.getMessage());
-        }
+        isTrue(expression, errorCode);
     }
 
+    /**
+     * 断言状态条件为 true（错误枚举 + 占位符参数）。
+     *
+     * @param expression 状态条件表达式
+     * @param errorCode  错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void state(boolean expression, IErrorCode errorCode, Object... args) {
-        if (!expression) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
-        }
+        isTrue(expression, errorCode, args);
     }
 
+    /**
+     * 断言状态条件为 true（指定异常工厂 + 默认消息）。
+     *
+     * @param expression 状态条件表达式
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void state(boolean expression, ExceptionFactory factory) {
-        if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, "state check failed", factory);
-        }
+        isTrue(expression, "state check failed", factory);
     }
 
+    /**
+     * 断言状态条件为 true（指定异常工厂）。
+     *
+     * @param expression 状态条件表达式
+     * @param message    错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void state(boolean expression, String message, ExceptionFactory factory) {
-        if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, message, factory);
-        }
+        isTrue(expression, message, factory);
     }
 
+    /**
+     * 断言状态条件为 true（指定异常工厂 + 占位符参数）。
+     *
+     * @param expression 状态条件表达式
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void state(boolean expression, String message, ExceptionFactory factory, Object... args) {
-        if (!expression) {
-            throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
-        }
+        isTrue(expression, message, factory, args);
     }
 
+    /**
+     * 断言状态条件为 true（指定异常工厂 + 错误码）。
+     *
+     * @param expression 状态条件表达式
+     * @param code       错误码
+     * @param message    错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void state(boolean expression, int code, String message, ExceptionFactory factory) {
-        if (!expression) {
-            throw newException(code, message, factory);
-        }
+        isTrue(expression, code, message, factory);
     }
 
+    /**
+     * 断言状态条件为 true（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param expression 状态条件表达式
+     * @param code       错误码
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void state(boolean expression, int code, String message, ExceptionFactory factory, Object... args) {
-        if (!expression) {
-            throw newException(code, formatMessage(message, args), factory);
-        }
+        isTrue(expression, code, message, factory, args);
     }
 
+    /**
+     * 断言状态条件为 true（指定异常工厂 + 错误枚举）。
+     *
+     * @param expression 状态条件表达式
+     * @param errorCode  错误枚举，包含错误码与错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void state(boolean expression, IErrorCode errorCode, ExceptionFactory factory) {
-        if (!expression) {
-            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
-        }
+        isTrue(expression, errorCode, factory);
     }
 
+    /**
+     * 断言状态条件为 true（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param expression 状态条件表达式
+     * @param errorCode  错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param factory    异常工厂，用于自定义异常类型
+     * @param args       占位符参数
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void state(boolean expression, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
-        if (!expression) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
-        }
+        isTrue(expression, errorCode, factory, args);
     }
 
+    /**
+     * 断言状态条件为 true（直接传入异常实例）。
+     *
+     * @param expression        状态条件表达式
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @throws RuntimeException 若表达式为 false，抛出由 exceptionSupplier 提供的异常
+     */
     public static void stateOrThrow(boolean expression, Supplier<? extends RuntimeException> exceptionSupplier) {
-        if (!expression) {
-            throw nullSafeGetException(exceptionSupplier);
-        }
+        isTrueOrThrow(expression, exceptionSupplier);
     }
 
+    /**
+     * 断言状态条件为 true（label 机制）。
+     * <p>自动生成消息：{label} check failed</p>
+     *
+     * @param expression 状态条件表达式
+     * @param label      状态/字段名称，用于生成语义化错误消息
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void stateAs(boolean expression, String label) {
         if (!expression) {
             throw newException(ErrorCodes.UNSPECIFIED, label + " check failed");
         }
     }
 
+    /**
+     * 断言状态条件为 true（label 机制 + 错误码）。
+     *
+     * @param expression 状态条件表达式
+     * @param code       错误码
+     * @param label      状态/字段名称，用于生成语义化错误消息
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void stateAs(boolean expression, int code, String label) {
         if (!expression) {
             throw newException(code, label + " check failed");
         }
     }
 
+    /**
+     * 断言状态条件为 true（label 机制 + 指定异常工厂）。
+     *
+     * @param expression 状态条件表达式
+     * @param label      状态/字段名称，用于生成语义化错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void stateAs(boolean expression, String label, ExceptionFactory factory) {
         if (!expression) {
             throw newException(ErrorCodes.UNSPECIFIED, label + " check failed", factory);
         }
     }
 
+    /**
+     * 断言状态条件为 true（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param expression 状态条件表达式
+     * @param code       错误码
+     * @param label      状态/字段名称，用于生成语义化错误消息
+     * @param factory    异常工厂，用于自定义异常类型
+     * @throws RuntimeException 若表达式为 false
+     */
     public static void stateAs(boolean expression, int code, String label, ExceptionFactory factory) {
         if (!expression) {
             throw newException(code, label + " check failed", factory);
@@ -7873,7 +9918,8 @@ public final class BizAssert {
     // ========================================================================
 
     /**
-     * 直接抛出异常
+     * 直接抛出异常（用于不可达分支、switch default 等场景）。
+     * <p>声明泛型返回类型 {@code <T>} 以便在表达式中使用（实际永远不会返回）。</p>
      *
      * <pre>{@code
      * switch (status) {
@@ -7884,44 +9930,131 @@ public final class BizAssert {
      * }</pre>
      *
      * @param message 错误消息
+     * @param <T>     声明返回类型以便在表达式中使用（实际不会返回）
      * @return 声明返回类型以便在表达式中使用（实际不会返回）
+     * @throws RuntimeException 总是抛出
      */
     public static <T> T fail(String message) {
-        throw newException(ErrorCodes.UNSPECIFIED, message);
+        throw newException(message);
     }
 
+    /**
+     * 直接抛出异常（占位符消息）。
+     *
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @param <T>     声明返回类型以便在表达式中使用（实际不会返回）
+     * @return 声明返回类型以便在表达式中使用（实际不会返回）
+     * @throws RuntimeException 总是抛出
+     */
     public static <T> T fail(String message, Object... args) {
-        throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args));
+        throw newException(formatMessage(message, args));
     }
 
+    /**
+     * 直接抛出异常（带错误码）。
+     *
+     * @param code    错误码
+     * @param message 错误消息
+     * @param <T>     声明返回类型以便在表达式中使用（实际不会返回）
+     * @return 声明返回类型以便在表达式中使用（实际不会返回）
+     * @throws RuntimeException 总是抛出
+     */
     public static <T> T fail(int code, String message) {
         throw newException(code, message);
     }
 
+    /**
+     * 直接抛出异常（带错误码 + 占位符参数）。
+     *
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @param <T>     声明返回类型以便在表达式中使用（实际不会返回）
+     * @return 声明返回类型以便在表达式中使用（实际不会返回）
+     * @throws RuntimeException 总是抛出
+     */
     public static <T> T fail(int code, String message, Object... args) {
         throw newException(code, formatMessage(message, args));
     }
 
+    /**
+     * 直接抛出异常（错误枚举）。
+     *
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param <T>       声明返回类型以便在表达式中使用（实际不会返回）
+     * @return 声明返回类型以便在表达式中使用（实际不会返回）
+     * @throws RuntimeException 总是抛出
+     */
     public static <T> T fail(IErrorCode errorCode) {
         throw newException(errorCode.getCode(), errorCode.getMessage());
     }
 
+    /**
+     * 直接抛出异常（错误枚举 + 占位符参数）。
+     *
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param args      占位符参数
+     * @param <T>       声明返回类型以便在表达式中使用（实际不会返回）
+     * @return 声明返回类型以便在表达式中使用（实际不会返回）
+     * @throws RuntimeException 总是抛出
+     */
     public static <T> T fail(IErrorCode errorCode, Object... args) {
         throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
     }
 
+    /**
+     * 直接抛出异常（指定异常工厂）。
+     *
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     声明返回类型以便在表达式中使用（实际不会返回）
+     * @return 声明返回类型以便在表达式中使用（实际不会返回）
+     * @throws RuntimeException 总是抛出
+     */
     public static <T> T fail(String message, ExceptionFactory factory) {
-        throw newException(ErrorCodes.UNSPECIFIED, message, factory);
+        throw newException(message, factory);
     }
 
+    /**
+     * 直接抛出异常（指定异常工厂 + 占位符参数）。
+     *
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @param <T>     声明返回类型以便在表达式中使用（实际不会返回）
+     * @return 声明返回类型以便在表达式中使用（实际不会返回）
+     * @throws RuntimeException 总是抛出
+     */
     public static <T> T fail(String message, ExceptionFactory factory, Object... args) {
-        throw newException(ErrorCodes.UNSPECIFIED, formatMessage(message, args), factory);
+        throw newException(formatMessage(message, args), factory);
     }
 
+    /**
+     * 直接抛出异常（指定异常工厂 + 错误码）。
+     *
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param <T>     声明返回类型以便在表达式中使用（实际不会返回）
+     * @return 声明返回类型以便在表达式中使用（实际不会返回）
+     * @throws RuntimeException 总是抛出
+     */
     public static <T> T fail(int code, String message, ExceptionFactory factory) {
         throw newException(code, message, factory);
     }
 
+    /**
+     * 直接抛出异常（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @param <T>     声明返回类型以便在表达式中使用（实际不会返回）
+     * @return 声明返回类型以便在表达式中使用（实际不会返回）
+     * @throws RuntimeException 总是抛出
+     */
     public static <T> T fail(int code, String message, ExceptionFactory factory, Object... args) {
         throw newException(code, formatMessage(message, args), factory);
     }
@@ -7929,6 +10062,42 @@ public final class BizAssert {
     // ========================================================================
     //  内部工具方法
     // ========================================================================
+
+    private static boolean isPositiveNumber(Number value) {
+        // BigDecimal / BigInteger：必须走 compareTo，避免精度丢失
+        if (value instanceof BigDecimal) {
+            return ((BigDecimal) value).compareTo(BigDecimal.ZERO) > 0;
+        }
+        if (value instanceof BigInteger) {
+            return ((BigInteger) value).compareTo(BigInteger.ZERO) > 0;
+        }
+        // 整型：longValue() 语义更清晰，且无精度问题
+        if (value instanceof Long || value instanceof Integer
+                || value instanceof Short || value instanceof Byte) {
+            return value.longValue() > 0L;
+        }
+        // 浮点型：额外防御 NaN 和 Infinity
+        double d = value.doubleValue();
+        return !Double.isNaN(d) && !Double.isInfinite(d) && d > 0.0;
+    }
+
+    private static boolean isNonNegativeNumber(Number value) {
+        // BigDecimal / BigInteger：必须走 compareTo，避免精度丢失
+        if (value instanceof BigDecimal) {
+            return ((BigDecimal) value).compareTo(BigDecimal.ZERO) > -1;
+        }
+        if (value instanceof BigInteger) {
+            return ((BigInteger) value).compareTo(BigInteger.ZERO) > -1;
+        }
+        // 整型：longValue() 语义更清晰，且无精度问题
+        if (value instanceof Long || value instanceof Integer
+                || value instanceof Short || value instanceof Byte) {
+            return value.longValue() >= 0L;
+        }
+        // 浮点型：额外防御 NaN 和 Infinity
+        double d = value.doubleValue();
+        return !Double.isNaN(d) && !Double.isInfinite(d) && d >= 0.0;
+    }
 
     /**
      * 判断字符串是否为空白（null、空、全空白字符）

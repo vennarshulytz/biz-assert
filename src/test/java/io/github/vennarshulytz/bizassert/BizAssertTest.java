@@ -213,14 +213,14 @@ class BizAssertTest {
         @Test
         void notNull_fail_placeholder() {
             BizException ex = assertThrows(BizException.class,
-                    () -> BizAssert.notNull(null, "{0} must not be null", "userId"));
+                    () -> BizAssert.notNull(null, "{} must not be null", "userId"));
             assertEquals("userId must not be null", ex.getMessage());
         }
 
         @Test
         void notNull_fail_placeholder_nullArg() {
             BizException ex = assertThrows(BizException.class,
-                    () -> BizAssert.notNull(null, "{0} is missing", (Object) null));
+                    () -> BizAssert.notNull(null, "{} is missing", (Object) null));
             assertEquals("<null> is missing", ex.getMessage());
         }
 
@@ -854,21 +854,21 @@ class BizAssertTest {
         @Test
         void singlePlaceholder() {
             BizException ex = assertThrows(BizException.class,
-                    () -> BizAssert.isTrue(false, "{0} is required", "email"));
+                    () -> BizAssert.isTrue(false, "{} is required", "email"));
             assertEquals("email is required", ex.getMessage());
         }
 
         @Test
         void multiplePlaceholders() {
             BizException ex = assertThrows(BizException.class,
-                    () -> BizAssert.isTrue(false, "{0} must be between {1} and {2}", "age", 18, 65));
+                    () -> BizAssert.isTrue(false, "{} must be between {} and {}", "age", 18, 65));
             assertEquals("age must be between 18 and 65", ex.getMessage());
         }
 
         @Test
         void nullArgShowsPlaceholder() {
             BizException ex = assertThrows(BizException.class,
-                    () -> BizAssert.isTrue(false, "{0} is invalid", (Object) null));
+                    () -> BizAssert.isTrue(false, "{} is invalid", (Object) null));
             assertEquals("<null> is invalid", ex.getMessage());
         }
 
