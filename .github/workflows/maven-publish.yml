@@ -222,7 +222,7 @@ jobs:
           mvn --version
           echo ""
           echo "📋 Java version:"
-          java --version
+          java -version
 
       - name: 🚀 Build and Publish
         run: |
