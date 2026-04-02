@@ -1,5 +1,11 @@
 # BizAssert
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.vennarshulytz/biz-assert.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.vennarshulytz/biz-assert)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Java Version](https://img.shields.io/badge/Java-8%2B-green.svg)](https://www.oracle.com/java/technologies/javase-downloads.html)
+
+##### [📖 English Documentation](README.md) | 📖 中文文档
+
 一个轻量级、生产就绪的 Java 业务断言工具类。
 
 灵感来源于 Spring 的 `org.springframework.util.Assert`，**BizAssert** 专为**业务逻辑校验**而设计。断言失败时抛出携带错误码的业务异常（而非 `IllegalArgumentException`），非常适合企业应用中 Service 层的参数与状态校验。
@@ -25,7 +31,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.example</groupId>
+    <groupId>io.github.vennarshulytz</groupId>
     <artifactId>biz-assert</artifactId>
     <version>1.0.0</version>
 </dependency>
@@ -34,7 +40,7 @@
 ### Gradle
 
 ```groovy
-implementation 'com.example:biz-assert:1.0.0'
+implementation 'io.github.vennarshulytz:biz-assert:1.0.0'
 ```
 
 > **要求 Java 8+**
@@ -44,7 +50,7 @@ implementation 'com.example:biz-assert:1.0.0'
 ## 🚀 快速开始
 
 ```java
-import com.example.common.assert_.BizAssert;
+import io.github.vennarshulytz.common.assert_.BizAssert;
 
 // 基本用法 — 为 null 时抛出 BizException
 User user = BizAssert.notNull(userRepository.findById(id), "用户不存在");

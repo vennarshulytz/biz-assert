@@ -1,6 +1,10 @@
-
-
 # BizAssert
+
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.vennarshulytz/biz-assert.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.vennarshulytz/biz-assert)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Java Version](https://img.shields.io/badge/Java-8%2B-green.svg)](https://www.oracle.com/java/technologies/javase-downloads.html)
+
+##### 📖 English Documentation | 📖 [中文文档](README_zh.md)
 
 A lightweight, production-ready business assertion utility for Java applications.
 
@@ -27,7 +31,7 @@ Inspired by Spring's `org.springframework.util.Assert`, **BizAssert** is purpose
 
 ```xml
 <dependency>
-    <groupId>com.example</groupId>
+    <groupId>io.github.vennarshulytz</groupId>
     <artifactId>biz-assert</artifactId>
     <version>1.0.0</version>
 </dependency>
@@ -36,7 +40,7 @@ Inspired by Spring's `org.springframework.util.Assert`, **BizAssert** is purpose
 ### Gradle
 
 ```groovy
-implementation 'com.example:biz-assert:1.0.0'
+implementation 'io.github.vennarshulytz:biz-assert:1.0.0'
 ```
 
 > **Requires Java 8+**
@@ -46,7 +50,7 @@ implementation 'com.example:biz-assert:1.0.0'
 ## 🚀 Quick Start
 
 ```java
-import com.example.common.assert_.BizAssert;
+import io.github.vennarshulytz.common.assert_.BizAssert;
 
 // Basic — throws BizException if null
 User user = BizAssert.notNull(userRepository.findById(id), "User not found");
