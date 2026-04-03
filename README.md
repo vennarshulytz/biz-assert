@@ -11,6 +11,17 @@ A lightweight, production-ready business assertion utility for Java applications
 Inspired by Spring's `org.springframework.util.Assert`, **BizAssert** is purpose-built for **business logic validation**. It throws customizable business exceptions (with error codes) instead of generic `IllegalArgumentException`, making it ideal for service-layer validation in enterprise applications.
 
 ---
+## 🔗 Project Repository
+
+- **GitHub**：[vennarshulytz/biz-assert: BizAssert is a lightweight and enterprise-grade assertion library for Java, focused on business logic validation. Unlike standard assertion utilities, it throws customizable business exceptions with error codes, enabling consistent error handling and clearer service-layer validation across complex applications.](https://github.com/vennarshulytz/biz-assert/)
+
+---
+
+- If you encounter any issues while using this project, feel free to open an Issue. Pull Requests are always welcome and highly appreciated.
+- If you find this project helpful, please consider giving it a ⭐ Star on GitHub.
+- Your support means a lot and helps keep the project actively maintained and improved.
+
+---
 
 ## ✨ Features
 

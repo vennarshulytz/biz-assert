@@ -14,7 +14,7 @@ public interface IErrorCode {
     int getCode();
 
     /**
-     * 错误消息（支持占位符 {0}, {1}, ...）
+     * 错误消息（支持占位符 {}, {}, ...）
      */
     String getMessage();
 }

@@ -46,7 +46,7 @@ import java.util.function.Supplier;
  * BizAssert.notNull(userId, BizError.USER_NOT_NULL);
  *
  * // 占位符
- * BizAssert.notNull(userId, "{0} must not be null", "userId");
+ * BizAssert.notNull(userId, "{} must not be null", "userId");
  *
  * // 自定义异常工厂
  * BizAssert.isTrue(order.isPaid(), "订单未支付", PaymentException::new);
@@ -1834,7 +1834,7 @@ public final class BizAssert {
      * 断言集合不为空（占位符消息）。
      *
      * @param collection 待校验集合
-     * @param message    错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param args       占位符参数
      * @param <E>        集合元素类型
      * @param <T>        集合类型
@@ -1906,7 +1906,7 @@ public final class BizAssert {
      *
      * @param collection 待校验集合
      * @param code       错误码
-     * @param message    错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param args       占位符参数
      * @param <E>        集合元素类型
      * @param <T>        集合类型
@@ -1941,7 +1941,7 @@ public final class BizAssert {
      * 断言集合不为空（错误枚举 + 占位符参数）。
      *
      * @param collection 待校验集合
-     * @param errorCode  错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param errorCode  错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
      * @param args       占位符参数
      * @param <E>        集合元素类型
      * @param <T>        集合类型
@@ -1994,7 +1994,7 @@ public final class BizAssert {
      * 断言集合不为空（指定异常工厂 + 占位符参数）。
      *
      * @param collection 待校验集合
-     * @param message    错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param factory    异常工厂，用于自定义异常类型
      * @param args       占位符参数
      * @param <E>        集合元素类型
@@ -2033,7 +2033,7 @@ public final class BizAssert {
      *
      * @param collection 待校验集合
      * @param code       错误码
-     * @param message    错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param factory    异常工厂，用于自定义异常类型
      * @param args       占位符参数
      * @param <E>        集合元素类型
@@ -2070,7 +2070,7 @@ public final class BizAssert {
      * 断言集合不为空（指定异常工厂 + 错误枚举 + 占位符参数）。
      *
      * @param collection 待校验集合
-     * @param errorCode  错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param errorCode  错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
      * @param factory    异常工厂，用于自定义异常类型
      * @param args       占位符参数
      * @param <E>        集合元素类型
@@ -2217,7 +2217,7 @@ public final class BizAssert {
      * 断言 Map 不为空（占位符消息）。
      *
      * @param map     待校验 Map
-     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param args    占位符参数
      * @param <K>     键类型
      * @param <V>     值类型
@@ -2293,7 +2293,7 @@ public final class BizAssert {
      *
      * @param map     待校验 Map
      * @param code    错误码
-     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param args    占位符参数
      * @param <K>     键类型
      * @param <V>     值类型
@@ -2330,7 +2330,7 @@ public final class BizAssert {
      * 断言 Map 不为空（错误枚举 + 占位符参数）。
      *
      * @param map       待校验 Map
-     * @param errorCode 错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
      * @param args      占位符参数
      * @param <K>       键类型
      * @param <V>       值类型
@@ -2386,7 +2386,7 @@ public final class BizAssert {
      * 断言 Map 不为空（指定异常工厂 + 占位符参数）。
      *
      * @param map     待校验 Map
-     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param factory 异常工厂，用于自定义异常类型
      * @param args    占位符参数
      * @param <K>     键类型
@@ -2427,7 +2427,7 @@ public final class BizAssert {
      *
      * @param map     待校验 Map
      * @param code    错误码
-     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param factory 异常工厂，用于自定义异常类型
      * @param args    占位符参数
      * @param <K>     键类型
@@ -2466,7 +2466,7 @@ public final class BizAssert {
      * 断言 Map 不为空（指定异常工厂 + 错误枚举 + 占位符参数）。
      *
      * @param map       待校验 Map
-     * @param errorCode 错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
      * @param factory   异常工厂，用于自定义异常类型
      * @param args      占位符参数
      * @param <K>       键类型
@@ -2615,7 +2615,7 @@ public final class BizAssert {
      * 断言数组不为空（占位符消息）。
      *
      * @param array   待校验数组
-     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param args    占位符参数
      * @param <T>     数组元素类型
      * @return 非空数组
@@ -2683,7 +2683,7 @@ public final class BizAssert {
      *
      * @param array   待校验数组
      * @param code    错误码
-     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param args    占位符参数
      * @param <T>     数组元素类型
      * @return 非空数组
@@ -2716,7 +2716,7 @@ public final class BizAssert {
      * 断言数组不为空（错误枚举 + 占位符参数）。
      *
      * @param array     待校验数组
-     * @param errorCode 错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
      * @param args      占位符参数
      * @param <T>       数组元素类型
      * @return 非空数组
@@ -2766,7 +2766,7 @@ public final class BizAssert {
      * 断言数组不为空（指定异常工厂 + 占位符参数）。
      *
      * @param array   待校验数组
-     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param factory 异常工厂，用于自定义异常类型
      * @param args    占位符参数
      * @param <T>     数组元素类型
@@ -2803,7 +2803,7 @@ public final class BizAssert {
      *
      * @param array   待校验数组
      * @param code    错误码
-     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param factory 异常工厂，用于自定义异常类型
      * @param args    占位符参数
      * @param <T>     数组元素类型
@@ -2838,7 +2838,7 @@ public final class BizAssert {
      * 断言数组不为空（指定异常工厂 + 错误枚举 + 占位符参数）。
      *
      * @param array     待校验数组
-     * @param errorCode 错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
      * @param factory   异常工厂，用于自定义异常类型
      * @param args      占位符参数
      * @param <T>       数组元素类型
@@ -2973,7 +2973,7 @@ public final class BizAssert {
      * 断言字符串不为空白（占位符消息）。
      *
      * @param text    待校验字符串
-     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param args    占位符参数
      * @return 非空白字符串
      * @throws RuntimeException 若字符串为 null、空或空白
@@ -3037,7 +3037,7 @@ public final class BizAssert {
      *
      * @param text    待校验字符串
      * @param code    错误码
-     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param args    占位符参数
      * @return 非空白字符串
      * @throws RuntimeException 若字符串为 null、空或空白
@@ -3068,7 +3068,7 @@ public final class BizAssert {
      * 断言字符串不为空白（错误枚举 + 占位符参数）。
      *
      * @param text      待校验字符串
-     * @param errorCode 错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
      * @param args      占位符参数
      * @return 非空白字符串
      * @throws RuntimeException 若字符串为 null、空或空白
@@ -3115,7 +3115,7 @@ public final class BizAssert {
      * 断言字符串不为空白（指定异常工厂 + 占位符参数）。
      *
      * @param text    待校验字符串
-     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param factory 异常工厂，用于自定义异常类型
      * @param args    占位符参数
      * @return 非空白字符串
@@ -3150,7 +3150,7 @@ public final class BizAssert {
      *
      * @param text    待校验字符串
      * @param code    错误码
-     * @param message 错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param factory 异常工厂，用于自定义异常类型
      * @param args    占位符参数
      * @return 非空白字符串
@@ -3183,7 +3183,7 @@ public final class BizAssert {
      * 断言字符串不为空白（指定异常工厂 + 错误枚举 + 占位符参数）。
      *
      * @param text      待校验字符串
-     * @param errorCode 错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
      * @param factory   异常工厂，用于自定义异常类型
      * @param args      占位符参数
      * @return 非空白字符串
@@ -3314,7 +3314,7 @@ public final class BizAssert {
      *
      * @param actual   实际值
      * @param expected 期望值
-     * @param message  错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message  错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param args     占位符参数
      * @param <T>      对象类型
      * @throws RuntimeException 若两个对象不相等
@@ -3378,7 +3378,7 @@ public final class BizAssert {
      * @param actual   实际值
      * @param expected 期望值
      * @param code     错误码
-     * @param message  错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message  错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param args     占位符参数
      * @param <T>      对象类型
      * @throws RuntimeException 若两个对象不相等
@@ -3409,7 +3409,7 @@ public final class BizAssert {
      *
      * @param actual    实际值
      * @param expected  期望值
-     * @param errorCode 错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
      * @param args      占位符参数
      * @param <T>       对象类型
      * @throws RuntimeException 若两个对象不相等
@@ -3456,7 +3456,7 @@ public final class BizAssert {
      *
      * @param actual   实际值
      * @param expected 期望值
-     * @param message  错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message  错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param factory  异常工厂，用于自定义异常类型
      * @param args     占位符参数
      * @param <T>      对象类型
@@ -3491,7 +3491,7 @@ public final class BizAssert {
      * @param actual   实际值
      * @param expected 期望值
      * @param code     错误码
-     * @param message  错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message  错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param factory  异常工厂，用于自定义异常类型
      * @param args     占位符参数
      * @param <T>      对象类型
@@ -3524,7 +3524,7 @@ public final class BizAssert {
      *
      * @param actual    实际值
      * @param expected  期望值
-     * @param errorCode 错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
      * @param factory   异常工厂，用于自定义异常类型
      * @param args      占位符参数
      * @param <T>       对象类型
@@ -3648,7 +3648,7 @@ public final class BizAssert {
      *
      * @param actual     实际值
      * @param unexpected 不期望的值
-     * @param message    错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param args       占位符参数
      * @throws RuntimeException 若两个对象相等
      */
@@ -3708,7 +3708,7 @@ public final class BizAssert {
      * @param actual     实际值
      * @param unexpected 不期望的值
      * @param code       错误码
-     * @param message    错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param args       占位符参数
      * @throws RuntimeException 若两个对象相等
      */
@@ -3737,7 +3737,7 @@ public final class BizAssert {
      *
      * @param actual     实际值
      * @param unexpected 不期望的值
-     * @param errorCode  错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param errorCode  错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
      * @param args       占位符参数
      * @throws RuntimeException 若两个对象相等
      */
@@ -3781,7 +3781,7 @@ public final class BizAssert {
      *
      * @param actual     实际值
      * @param unexpected 不期望的值
-     * @param message    错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param factory    异常工厂，用于自定义异常类型
      * @param args       占位符参数
      * @throws RuntimeException 若两个对象相等
@@ -3814,7 +3814,7 @@ public final class BizAssert {
      * @param actual     实际值
      * @param unexpected 不期望的值
      * @param code       错误码
-     * @param message    错误消息模板，支持 {@code {0}, {1}, ...} 占位符
+     * @param message    错误消息模板，支持 {@code {}, {}, ...} 占位符
      * @param factory    异常工厂，用于自定义异常类型
      * @param args       占位符参数
      * @throws RuntimeException 若两个对象相等
@@ -3845,7 +3845,7 @@ public final class BizAssert {
      *
      * @param actual     实际值
      * @param unexpected 不期望的值
-     * @param errorCode  错误枚举，消息模板支持 {@code {0}, {1}, ...} 占位符
+     * @param errorCode  错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
      * @param factory    异常工厂，用于自定义异常类型
      * @param args       占位符参数
      * @throws RuntimeException 若两个对象相等

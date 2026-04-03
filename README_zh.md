@@ -11,6 +11,17 @@
 灵感来源于 Spring 的 `org.springframework.util.Assert`，**BizAssert** 专为**业务逻辑校验**而设计。断言失败时抛出携带错误码的业务异常（而非 `IllegalArgumentException`），非常适合企业应用中 Service 层的参数与状态校验。
 
 ---
+## 🔗 项目地址
+
+- **GitHub**：[vennarshulytz/biz-assert: BizAssert is a lightweight and enterprise-grade assertion library for Java, focused on business logic validation. Unlike standard assertion utilities, it throws customizable business exceptions with error codes, enabling consistent error handling and clearer service-layer validation across complex applications.](https://github.com/vennarshulytz/biz-assert)
+
+---
+
+- 如果在使用过程中遇到问题，欢迎随时提交 Issue；也非常欢迎通过 PR 参与改进。 
+- 如果这个项目对你有所帮助，欢迎在 GitHub 上点个 ⭐ Star 支持一下。
+- 你的支持是开源作者持续维护和迭代项目的重要动力！
+
+---
 
 ## ✨ 特性
 
