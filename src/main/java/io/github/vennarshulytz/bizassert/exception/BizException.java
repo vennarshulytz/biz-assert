@@ -16,12 +16,12 @@ public class BizException extends RuntimeException {
     private final int code;
 
     public BizException(int code, String message) {
-        super(message);
+        super(message, null, false, false);
         this.code = code;
     }
 
     public BizException(int code, String message, Throwable cause) {
-        super(message, cause);
+        super(message, cause, false, false);
         this.code = code;
     }
 

@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import static io.github.vennarshulytz.bizassert.utils.MessageFormatter.format;
+
 /**
  * 业务断言工具类
  *
@@ -111,28 +113,6 @@ public final class BizAssert {
         }
     }
 
-    // ==================== 消息格式化 ====================
-
-    /**
-     * 格式化消息，将 {}, {}, ... 替换为实际参数值
-     * <p>null 参数展示为 {@code <null>}</p>
-     */
-    private static String formatMessage(String pattern, Object... args) {
-        if (args == null || args.length == 0) return pattern;
-        StringBuilder sb = new StringBuilder(pattern.length() + 16 * args.length);
-        int pos = 0, argIdx = 0;
-        while (argIdx < args.length) {
-            int idx = pattern.indexOf("{}", pos);
-            if (idx == -1) break;
-            sb.append(pattern, pos, idx)
-                    .append(args[argIdx] != null ? args[argIdx] : "<null>");
-            pos = idx + 2;
-            argIdx++;
-        }
-        sb.append(pattern, pos, pattern.length());
-        return sb.toString();
-    }
-
     // ==================== 异常抛出 ====================
 
     /**
@@ -214,7 +194,7 @@ public final class BizAssert {
      */
     public static void isTrue(boolean expression, String message, Object... args) {
         if (!expression) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
     }
 
@@ -242,7 +222,7 @@ public final class BizAssert {
      */
     public static void isTrue(boolean expression, Supplier<String> messageSupplier, Object... args) {
         if (!expression) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
     }
 
@@ -271,7 +251,7 @@ public final class BizAssert {
      */
     public static void isTrue(boolean expression, int code, String message, Object... args) {
         if (!expression) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
     }
 
@@ -298,7 +278,7 @@ public final class BizAssert {
      */
     public static void isTrue(boolean expression, IErrorCode errorCode, Object... args) {
         if (!expression) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
     }
 
@@ -340,7 +320,7 @@ public final class BizAssert {
      */
     public static void isTrue(boolean expression, String message, ExceptionFactory factory, Object... args) {
         if (!expression) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
     }
 
@@ -371,7 +351,7 @@ public final class BizAssert {
      */
     public static void isTrue(boolean expression, int code, String message, ExceptionFactory factory, Object... args) {
         if (!expression) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
     }
 
@@ -400,7 +380,7 @@ public final class BizAssert {
      */
     public static void isTrue(boolean expression, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (!expression) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
     }
 
@@ -519,7 +499,7 @@ public final class BizAssert {
      */
     public static void isFalse(boolean expression, String message, Object... args) {
         if (expression) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
     }
 
@@ -547,7 +527,7 @@ public final class BizAssert {
      */
     public static void isFalse(boolean expression, Supplier<String> messageSupplier, Object... args) {
         if (expression) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
     }
 
@@ -576,7 +556,7 @@ public final class BizAssert {
      */
     public static void isFalse(boolean expression, int code, String message, Object... args) {
         if (expression) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
     }
 
@@ -603,7 +583,7 @@ public final class BizAssert {
      */
     public static void isFalse(boolean expression, IErrorCode errorCode, Object... args) {
         if (expression) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
     }
 
@@ -645,7 +625,7 @@ public final class BizAssert {
      */
     public static void isFalse(boolean expression, String message, ExceptionFactory factory, Object... args) {
         if (expression) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
     }
 
@@ -676,7 +656,7 @@ public final class BizAssert {
      */
     public static void isFalse(boolean expression, int code, String message, ExceptionFactory factory, Object... args) {
         if (expression) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
     }
 
@@ -705,7 +685,7 @@ public final class BizAssert {
      */
     public static void isFalse(boolean expression, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (expression) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
     }
 
@@ -836,7 +816,7 @@ public final class BizAssert {
      */
     public static <T> T notNull(T object, String message, Object... args) {
         if (object == null) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return object;
     }
@@ -869,7 +849,7 @@ public final class BizAssert {
      */
     public static <T> T notNull(T object, Supplier<String> messageSupplier, Object... args) {
         if (object == null) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return object;
     }
@@ -904,7 +884,7 @@ public final class BizAssert {
      */
     public static <T> T notNull(T object, int code, String message, Object... args) {
         if (object == null) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return object;
     }
@@ -937,7 +917,7 @@ public final class BizAssert {
      */
     public static <T> T notNull(T object, IErrorCode errorCode, Object... args) {
         if (object == null) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return object;
     }
@@ -988,7 +968,7 @@ public final class BizAssert {
      */
     public static <T> T notNull(T object, String message, ExceptionFactory factory, Object... args) {
         if (object == null) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return object;
     }
@@ -1025,7 +1005,7 @@ public final class BizAssert {
      */
     public static <T> T notNull(T object, int code, String message, ExceptionFactory factory, Object... args) {
         if (object == null) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return object;
     }
@@ -1060,7 +1040,7 @@ public final class BizAssert {
      */
     public static <T> T notNull(T object, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (object == null) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return object;
     }
@@ -1191,7 +1171,7 @@ public final class BizAssert {
      */
     public static void isNull(Object object, String message, Object... args) {
         if (object != null) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
     }
 
@@ -1218,7 +1198,7 @@ public final class BizAssert {
      */
     public static void isNull(Object object, Supplier<String> messageSupplier, Object... args) {
         if (object != null) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
     }
 
@@ -1247,7 +1227,7 @@ public final class BizAssert {
      */
     public static void isNull(Object object, int code, String message, Object... args) {
         if (object != null) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
     }
 
@@ -1274,7 +1254,7 @@ public final class BizAssert {
      */
     public static void isNull(Object object, IErrorCode errorCode, Object... args) {
         if (object != null) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
     }
 
@@ -1316,7 +1296,7 @@ public final class BizAssert {
      */
     public static void isNull(Object object, String message, ExceptionFactory factory, Object... args) {
         if (object != null) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
     }
 
@@ -1347,7 +1327,7 @@ public final class BizAssert {
      */
     public static void isNull(Object object, int code, String message, ExceptionFactory factory, Object... args) {
         if (object != null) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
     }
 
@@ -1376,7 +1356,7 @@ public final class BizAssert {
      */
     public static void isNull(Object object, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (object != null) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
     }
 
@@ -1499,7 +1479,7 @@ public final class BizAssert {
      */
     public static String notEmpty(String text, String message, Object... args) {
         if (text == null || text.isEmpty()) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return text;
     }
@@ -1530,7 +1510,7 @@ public final class BizAssert {
      */
     public static String notEmpty(String text, Supplier<String> messageSupplier, Object... args) {
         if (text == null || text.isEmpty()) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return text;
     }
@@ -1563,7 +1543,7 @@ public final class BizAssert {
      */
     public static String notEmpty(String text, int code, String message, Object... args) {
         if (text == null || text.isEmpty()) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return text;
     }
@@ -1594,7 +1574,7 @@ public final class BizAssert {
      */
     public static String notEmpty(String text, IErrorCode errorCode, Object... args) {
         if (text == null || text.isEmpty()) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return text;
     }
@@ -1642,7 +1622,7 @@ public final class BizAssert {
      */
     public static String notEmpty(String text, String message, ExceptionFactory factory, Object... args) {
         if (text == null || text.isEmpty()) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return text;
     }
@@ -1677,7 +1657,7 @@ public final class BizAssert {
      */
     public static String notEmpty(String text, int code, String message, ExceptionFactory factory, Object... args) {
         if (text == null || text.isEmpty()) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return text;
     }
@@ -1710,7 +1690,7 @@ public final class BizAssert {
      */
     public static String notEmpty(String text, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (text == null || text.isEmpty()) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return text;
     }
@@ -1843,7 +1823,7 @@ public final class BizAssert {
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, String message, Object... args) {
         if (collection == null || collection.isEmpty()) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return collection;
     }
@@ -1878,7 +1858,7 @@ public final class BizAssert {
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, Supplier<String> messageSupplier, Object... args) {
         if (collection == null || collection.isEmpty()) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return collection;
     }
@@ -1915,7 +1895,7 @@ public final class BizAssert {
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, int code, String message, Object... args) {
         if (collection == null || collection.isEmpty()) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return collection;
     }
@@ -1950,7 +1930,7 @@ public final class BizAssert {
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, IErrorCode errorCode, Object... args) {
         if (collection == null || collection.isEmpty()) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return collection;
     }
@@ -2004,7 +1984,7 @@ public final class BizAssert {
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, String message, ExceptionFactory factory, Object... args) {
         if (collection == null || collection.isEmpty()) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return collection;
     }
@@ -2043,7 +2023,7 @@ public final class BizAssert {
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, int code, String message, ExceptionFactory factory, Object... args) {
         if (collection == null || collection.isEmpty()) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return collection;
     }
@@ -2080,7 +2060,7 @@ public final class BizAssert {
      */
     public static <E, T extends Collection<E>> T notEmpty(T collection, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (collection == null || collection.isEmpty()) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return collection;
     }
@@ -2227,7 +2207,7 @@ public final class BizAssert {
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, String message, Object... args) {
         if (map == null || map.isEmpty()) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return map;
     }
@@ -2264,7 +2244,7 @@ public final class BizAssert {
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, Supplier<String> messageSupplier, Object... args) {
         if (map == null || map.isEmpty()) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return map;
     }
@@ -2303,7 +2283,7 @@ public final class BizAssert {
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, int code, String message, Object... args) {
         if (map == null || map.isEmpty()) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return map;
     }
@@ -2340,7 +2320,7 @@ public final class BizAssert {
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, IErrorCode errorCode, Object... args) {
         if (map == null || map.isEmpty()) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return map;
     }
@@ -2397,7 +2377,7 @@ public final class BizAssert {
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, String message, ExceptionFactory factory, Object... args) {
         if (map == null || map.isEmpty()) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return map;
     }
@@ -2438,7 +2418,7 @@ public final class BizAssert {
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, int code, String message, ExceptionFactory factory, Object... args) {
         if (map == null || map.isEmpty()) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return map;
     }
@@ -2477,7 +2457,7 @@ public final class BizAssert {
      */
     public static <K, V, T extends Map<K, V>> T notEmpty(T map, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (map == null || map.isEmpty()) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return map;
     }
@@ -2623,7 +2603,7 @@ public final class BizAssert {
      */
     public static <T> T[] notEmpty(T[] array, String message, Object... args) {
         if (array == null || array.length == 0) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return array;
     }
@@ -2656,7 +2636,7 @@ public final class BizAssert {
      */
     public static <T> T[] notEmpty(T[] array, Supplier<String> messageSupplier, Object... args) {
         if (array == null || array.length == 0) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return array;
     }
@@ -2691,7 +2671,7 @@ public final class BizAssert {
      */
     public static <T> T[] notEmpty(T[] array, int code, String message, Object... args) {
         if (array == null || array.length == 0) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return array;
     }
@@ -2724,7 +2704,7 @@ public final class BizAssert {
      */
     public static <T> T[] notEmpty(T[] array, IErrorCode errorCode, Object... args) {
         if (array == null || array.length == 0) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return array;
     }
@@ -2775,7 +2755,7 @@ public final class BizAssert {
      */
     public static <T> T[] notEmpty(T[] array, String message, ExceptionFactory factory, Object... args) {
         if (array == null || array.length == 0) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return array;
     }
@@ -2812,7 +2792,7 @@ public final class BizAssert {
      */
     public static <T> T[] notEmpty(T[] array, int code, String message, ExceptionFactory factory, Object... args) {
         if (array == null || array.length == 0) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return array;
     }
@@ -2847,7 +2827,7 @@ public final class BizAssert {
      */
     public static <T> T[] notEmpty(T[] array, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (array == null || array.length == 0) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return array;
     }
@@ -2980,7 +2960,7 @@ public final class BizAssert {
      */
     public static String notBlank(String text, String message, Object... args) {
         if (isBlank(text)) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return text;
     }
@@ -3011,7 +2991,7 @@ public final class BizAssert {
      */
     public static String notBlank(String text, Supplier<String> messageSupplier, Object... args) {
         if (isBlank(text)) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return text;
     }
@@ -3044,7 +3024,7 @@ public final class BizAssert {
      */
     public static String notBlank(String text, int code, String message, Object... args) {
         if (isBlank(text)) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return text;
     }
@@ -3075,7 +3055,7 @@ public final class BizAssert {
      */
     public static String notBlank(String text, IErrorCode errorCode, Object... args) {
         if (isBlank(text)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return text;
     }
@@ -3123,7 +3103,7 @@ public final class BizAssert {
      */
     public static String notBlank(String text, String message, ExceptionFactory factory, Object... args) {
         if (isBlank(text)) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return text;
     }
@@ -3158,7 +3138,7 @@ public final class BizAssert {
      */
     public static String notBlank(String text, int code, String message, ExceptionFactory factory, Object... args) {
         if (isBlank(text)) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return text;
     }
@@ -3191,7 +3171,7 @@ public final class BizAssert {
      */
     public static String notBlank(String text, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (isBlank(text)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return text;
     }
@@ -3321,7 +3301,7 @@ public final class BizAssert {
      */
     public static <T> void isEqual(T actual, T expected, String message, Object... args) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
     }
 
@@ -3352,7 +3332,7 @@ public final class BizAssert {
      */
     public static <T> void isEqual(T actual, T expected, Supplier<String> messageSupplier, Object... args) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
     }
 
@@ -3385,7 +3365,7 @@ public final class BizAssert {
      */
     public static <T> void isEqual(T actual, T expected, int code, String message, Object... args) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
     }
 
@@ -3416,7 +3396,7 @@ public final class BizAssert {
      */
     public static <T> void isEqual(T actual, T expected, IErrorCode errorCode, Object... args) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
     }
 
@@ -3464,7 +3444,7 @@ public final class BizAssert {
      */
     public static <T> void isEqual(T actual, T expected, String message, ExceptionFactory factory, Object... args) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
     }
 
@@ -3499,7 +3479,7 @@ public final class BizAssert {
      */
     public static <T> void isEqual(T actual, T expected, int code, String message, ExceptionFactory factory, Object... args) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
     }
 
@@ -3532,7 +3512,7 @@ public final class BizAssert {
      */
     public static <T> void isEqual(T actual, T expected, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (!Objects.equals(actual, expected)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
     }
 
@@ -3654,7 +3634,7 @@ public final class BizAssert {
      */
     public static void notEqual(Object actual, Object unexpected, String message, Object... args) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
     }
 
@@ -3683,7 +3663,7 @@ public final class BizAssert {
      */
     public static void notEqual(Object actual, Object unexpected, Supplier<String> messageSupplier, Object... args) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
     }
 
@@ -3714,7 +3694,7 @@ public final class BizAssert {
      */
     public static void notEqual(Object actual, Object unexpected, int code, String message, Object... args) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
     }
 
@@ -3743,7 +3723,7 @@ public final class BizAssert {
      */
     public static void notEqual(Object actual, Object unexpected, IErrorCode errorCode, Object... args) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
     }
 
@@ -3788,7 +3768,7 @@ public final class BizAssert {
      */
     public static void notEqual(Object actual, Object unexpected, String message, ExceptionFactory factory, Object... args) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
     }
 
@@ -3821,7 +3801,7 @@ public final class BizAssert {
      */
     public static void notEqual(Object actual, Object unexpected, int code, String message, ExceptionFactory factory, Object... args) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
     }
 
@@ -3852,7 +3832,7 @@ public final class BizAssert {
      */
     public static void notEqual(Object actual, Object unexpected, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (Objects.equals(actual, unexpected)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
     }
 
@@ -3976,7 +3956,7 @@ public final class BizAssert {
      */
     public static int isPositive(int value, String message, Object... args) {
         if (value <= 0) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return value;
     }
@@ -4007,7 +3987,7 @@ public final class BizAssert {
      */
     public static int isPositive(int value, Supplier<String> messageSupplier, Object... args) {
         if (value <= 0) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
@@ -4040,7 +4020,7 @@ public final class BizAssert {
      */
     public static int isPositive(int value, int code, String message, Object... args) {
         if (value <= 0) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return value;
     }
@@ -4071,7 +4051,7 @@ public final class BizAssert {
      */
     public static int isPositive(int value, IErrorCode errorCode, Object... args) {
         if (value <= 0) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return value;
     }
@@ -4119,7 +4099,7 @@ public final class BizAssert {
      */
     public static int isPositive(int value, String message, ExceptionFactory factory, Object... args) {
         if (value <= 0) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return value;
     }
@@ -4155,7 +4135,7 @@ public final class BizAssert {
      */
     public static int isPositive(int value, int code, String message, ExceptionFactory factory, Object... args) {
         if (value <= 0) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return value;
     }
@@ -4188,7 +4168,7 @@ public final class BizAssert {
      */
     public static int isPositive(int value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (value <= 0) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return value;
     }
@@ -4310,7 +4290,7 @@ public final class BizAssert {
      */
     public static long isPositive(long value, String message, Object... args) {
         if (value <= 0L) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return value;
     }
@@ -4341,7 +4321,7 @@ public final class BizAssert {
      */
     public static long isPositive(long value, Supplier<String> messageSupplier, Object... args) {
         if (value <= 0) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
@@ -4374,7 +4354,7 @@ public final class BizAssert {
      */
     public static long isPositive(long value, int code, String message, Object... args) {
         if (value <= 0) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return value;
     }
@@ -4405,7 +4385,7 @@ public final class BizAssert {
      */
     public static long isPositive(long value, IErrorCode errorCode, Object... args) {
         if (value <= 0L) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return value;
     }
@@ -4453,7 +4433,7 @@ public final class BizAssert {
      */
     public static long isPositive(long value, String message, ExceptionFactory factory, Object... args) {
         if (value <= 0) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return value;
     }
@@ -4489,7 +4469,7 @@ public final class BizAssert {
      */
     public static long isPositive(long value, int code, String message, ExceptionFactory factory, Object... args) {
         if (value <= 0) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return value;
     }
@@ -4522,7 +4502,7 @@ public final class BizAssert {
      */
     public static long isPositive(long value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (value <= 0) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return value;
     }
@@ -4649,7 +4629,7 @@ public final class BizAssert {
      */
     public static <T extends Number> T isPositive(T value, String message, Object... args) {
         if (!isPositiveNumber(value)) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return value;
     }
@@ -4682,7 +4662,7 @@ public final class BizAssert {
      */
     public static <T extends Number> T isPositive(T value, Supplier<String> messageSupplier, Object... args) {
         if (!isPositiveNumber(value)) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
@@ -4717,7 +4697,7 @@ public final class BizAssert {
      */
     public static <T extends Number> T isPositive(T value, int code, String message, Object... args) {
         if (!isPositiveNumber(value)) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return value;
     }
@@ -4750,7 +4730,7 @@ public final class BizAssert {
      */
     public static <T extends Number> T isPositive(T value, IErrorCode errorCode, Object... args) {
         if (!isPositiveNumber(value)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return value;
     }
@@ -4798,7 +4778,7 @@ public final class BizAssert {
      */
     public static <T extends Number> T isPositive(T value, String message, ExceptionFactory factory, Object... args) {
         if (!isPositiveNumber(value)) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return value;
     }
@@ -4836,7 +4816,7 @@ public final class BizAssert {
      */
     public static <T extends Number> T isPositive(T value, int code, String message, ExceptionFactory factory, Object... args) {
         if (!isPositiveNumber(value)) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return value;
     }
@@ -4871,7 +4851,7 @@ public final class BizAssert {
      */
     public static <T extends Number> T isPositive(T value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (!isPositiveNumber(value)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return value;
     }
@@ -5000,7 +4980,7 @@ public final class BizAssert {
      */
     public static int isNonNegative(int value, String message, Object... args) {
         if (value < 0) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return value;
     }
@@ -5031,7 +5011,7 @@ public final class BizAssert {
      */
     public static int isNonNegative(int value, Supplier<String> messageSupplier, Object... args) {
         if (value < 0) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
@@ -5064,7 +5044,7 @@ public final class BizAssert {
      */
     public static int isNonNegative(int value, int code, String message, Object... args) {
         if (value < 0) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return value;
     }
@@ -5095,7 +5075,7 @@ public final class BizAssert {
      */
     public static int isNonNegative(int value, IErrorCode errorCode, Object... args) {
         if (value < 0) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return value;
     }
@@ -5143,7 +5123,7 @@ public final class BizAssert {
      */
     public static int isNonNegative(int value, String message, ExceptionFactory factory, Object... args) {
         if (value < 0) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return value;
     }
@@ -5178,7 +5158,7 @@ public final class BizAssert {
      */
     public static int isNonNegative(int value, int code, String message, ExceptionFactory factory, Object... args) {
         if (value < 0) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return value;
     }
@@ -5211,7 +5191,7 @@ public final class BizAssert {
      */
     public static int isNonNegative(int value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (value < 0) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return value;
     }
@@ -5335,7 +5315,7 @@ public final class BizAssert {
      */
     public static long isNonNegative(long value, String message, Object... args) {
         if (value < 0) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return value;
     }
@@ -5366,7 +5346,7 @@ public final class BizAssert {
      */
     public static long isNonNegative(long value, Supplier<String> messageSupplier, Object... args) {
         if (value < 0) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
@@ -5399,7 +5379,7 @@ public final class BizAssert {
      */
     public static long isNonNegative(long value, int code, String message, Object... args) {
         if (value < 0) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return value;
     }
@@ -5430,7 +5410,7 @@ public final class BizAssert {
      */
     public static long isNonNegative(long value, IErrorCode errorCode, Object... args) {
         if (value < 0) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return value;
     }
@@ -5478,7 +5458,7 @@ public final class BizAssert {
      */
     public static long isNonNegative(long value, String message, ExceptionFactory factory, Object... args) {
         if (value < 0) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return value;
     }
@@ -5513,7 +5493,7 @@ public final class BizAssert {
      */
     public static long isNonNegative(long value, int code, String message, ExceptionFactory factory, Object... args) {
         if (value < 0) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return value;
     }
@@ -5546,7 +5526,7 @@ public final class BizAssert {
      */
     public static long isNonNegative(long value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (value < 0) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return value;
     }
@@ -5675,7 +5655,7 @@ public final class BizAssert {
      */
     public static <T extends Number> T isNonNegative(T value, String message, Object... args) {
         if (!isNonNegativeNumber(value)) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return value;
     }
@@ -5708,7 +5688,7 @@ public final class BizAssert {
      */
     public static <T extends Number> T isNonNegative(T value, Supplier<String> messageSupplier, Object... args) {
         if (!isNonNegativeNumber(value)) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
@@ -5743,7 +5723,7 @@ public final class BizAssert {
      */
     public static <T extends Number> T isNonNegative(T value, int code, String message, Object... args) {
         if (!isNonNegativeNumber(value)) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return value;
     }
@@ -5776,7 +5756,7 @@ public final class BizAssert {
      */
     public static <T extends Number> T isNonNegative(T value, IErrorCode errorCode, Object... args) {
         if (!isNonNegativeNumber(value)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return value;
     }
@@ -5824,7 +5804,7 @@ public final class BizAssert {
      */
     public static <T extends Number> T isNonNegative(T value, String message, ExceptionFactory factory, Object... args) {
         if (!isNonNegativeNumber(value)) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return value;
     }
@@ -5861,7 +5841,7 @@ public final class BizAssert {
      */
     public static <T extends Number> T isNonNegative(T value, int code, String message, ExceptionFactory factory, Object... args) {
         if (!isNonNegativeNumber(value)) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return value;
     }
@@ -5896,7 +5876,7 @@ public final class BizAssert {
      */
     public static <T extends Number> T isNonNegative(T value, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (!isNonNegativeNumber(value)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return value;
     }
@@ -6027,7 +6007,7 @@ public final class BizAssert {
      */
     public static int isBetween(int value, int min, int max, String message, Object... args) {
         if (value < min || value > max) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return value;
     }
@@ -6060,7 +6040,7 @@ public final class BizAssert {
      */
     public static int isBetween(int value, int min, int max, Supplier<String> messageSupplier, Object... args) {
         if (value < min || value > max) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
@@ -6095,7 +6075,7 @@ public final class BizAssert {
      */
     public static int isBetween(int value, int min, int max, int code, String message, Object... args) {
         if (value < min || value > max) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return value;
     }
@@ -6128,7 +6108,7 @@ public final class BizAssert {
      */
     public static int isBetween(int value, int min, int max, IErrorCode errorCode, Object... args) {
         if (value < min || value > max) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return value;
     }
@@ -6179,7 +6159,7 @@ public final class BizAssert {
      */
     public static int isBetween(int value, int min, int max, String message, ExceptionFactory factory, Object... args) {
         if (value < min || value > max) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return value;
     }
@@ -6216,7 +6196,7 @@ public final class BizAssert {
      */
     public static int isBetween(int value, int min, int max, int code, String message, ExceptionFactory factory, Object... args) {
         if (value < min || value > max) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return value;
     }
@@ -6251,7 +6231,7 @@ public final class BizAssert {
      */
     public static int isBetween(int value, int min, int max, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (value < min || value > max) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return value;
     }
@@ -6383,7 +6363,7 @@ public final class BizAssert {
      */
     public static long isBetween(long value, long min, long max, String message, Object... args) {
         if (value < min || value > max) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return value;
     }
@@ -6416,7 +6396,7 @@ public final class BizAssert {
      */
     public static long isBetween(long value, long min, long max, Supplier<String> messageSupplier, Object... args) {
         if (value < min || value > max) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
@@ -6451,7 +6431,7 @@ public final class BizAssert {
      */
     public static long isBetween(long value, long min, long max, int code, String message, Object... args) {
         if (value < min || value > max) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return value;
     }
@@ -6484,7 +6464,7 @@ public final class BizAssert {
      */
     public static long isBetween(long value, long min, long max, IErrorCode errorCode, Object... args) {
         if (value < min || value > max) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return value;
     }
@@ -6535,7 +6515,7 @@ public final class BizAssert {
      */
     public static long isBetween(long value, long min, long max, String message, ExceptionFactory factory, Object... args) {
         if (value < min || value > max) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return value;
     }
@@ -6572,7 +6552,7 @@ public final class BizAssert {
      */
     public static long isBetween(long value, long min, long max, int code, String message, ExceptionFactory factory, Object... args) {
         if (value < min || value > max) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return value;
     }
@@ -6607,7 +6587,7 @@ public final class BizAssert {
      */
     public static long isBetween(long value, long min, long max, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (value < min || value > max) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return value;
     }
@@ -6744,7 +6724,7 @@ public final class BizAssert {
      */
     public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, String message, Object... args) {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return value;
     }
@@ -6779,7 +6759,7 @@ public final class BizAssert {
      */
     public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, Supplier<String> messageSupplier, Object... args) {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return value;
     }
@@ -6816,7 +6796,7 @@ public final class BizAssert {
      */
     public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, int code, String message, Object... args) {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return value;
     }
@@ -6851,7 +6831,7 @@ public final class BizAssert {
      */
     public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, IErrorCode errorCode, Object... args) {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return value;
     }
@@ -6905,7 +6885,7 @@ public final class BizAssert {
      */
     public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, String message, ExceptionFactory factory, Object... args) {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return value;
     }
@@ -6944,7 +6924,7 @@ public final class BizAssert {
      */
     public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, int code, String message, ExceptionFactory factory, Object... args) {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return value;
     }
@@ -6981,7 +6961,7 @@ public final class BizAssert {
      */
     public static <T extends Number & Comparable<T>> T isBetween(T value, T min, T max, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return value;
     }
@@ -7118,7 +7098,7 @@ public final class BizAssert {
     public static String matches(String text, String regex, String message, Object... args) {
         notNull(text, message, args);
         if (!text.matches(regex)) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return text;
     }
@@ -7151,7 +7131,7 @@ public final class BizAssert {
     public static String matches(String text, String regex, Supplier<String> messageSupplier, Object... args) {
         notNull(text, messageSupplier, args);
         if (!text.matches(regex)) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return text;
     }
@@ -7186,7 +7166,7 @@ public final class BizAssert {
     public static String matches(String text, String regex, int code, String message, Object... args) {
         notNull(text, code, message, args);
         if (!text.matches(regex)) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return text;
     }
@@ -7219,7 +7199,7 @@ public final class BizAssert {
     public static String matches(String text, String regex, IErrorCode errorCode, Object... args) {
         notNull(text, errorCode, args);
         if (!text.matches(regex)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return text;
     }
@@ -7270,7 +7250,7 @@ public final class BizAssert {
     public static String matches(String text, String regex, String message, ExceptionFactory factory, Object... args) {
         notNull(text, message, factory, args);
         if (!text.matches(regex)) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return text;
     }
@@ -7307,7 +7287,7 @@ public final class BizAssert {
     public static String matches(String text, String regex, int code, String message, ExceptionFactory factory, Object... args) {
         notNull(text, code, message, factory, args);
         if (!text.matches(regex)) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return text;
     }
@@ -7342,7 +7322,7 @@ public final class BizAssert {
     public static String matches(String text, String regex, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         notNull(text, errorCode, factory, args);
         if (!text.matches(regex)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return text;
     }
@@ -7472,7 +7452,7 @@ public final class BizAssert {
      */
     public static String doesNotContain(String text, String substring, String message, Object... args) {
         if (text != null && substring != null && text.contains(substring)) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return text;
     }
@@ -7503,7 +7483,7 @@ public final class BizAssert {
      */
     public static String doesNotContain(String text, String substring, Supplier<String> messageSupplier, Object... args) {
         if (text != null && substring != null && text.contains(substring)) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return text;
     }
@@ -7536,7 +7516,7 @@ public final class BizAssert {
      */
     public static String doesNotContain(String text, String substring, int code, String message, Object... args) {
         if (text != null && substring != null && text.contains(substring)) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return text;
     }
@@ -7567,7 +7547,7 @@ public final class BizAssert {
      */
     public static String doesNotContain(String text, String substring, IErrorCode errorCode, Object... args) {
         if (text != null && substring != null && text.contains(substring)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return text;
     }
@@ -7615,7 +7595,7 @@ public final class BizAssert {
      */
     public static String doesNotContain(String text, String substring, String message, ExceptionFactory factory, Object... args) {
         if (text != null && substring != null && text.contains(substring)) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return text;
     }
@@ -7650,7 +7630,7 @@ public final class BizAssert {
      */
     public static String doesNotContain(String text, String substring, int code, String message, ExceptionFactory factory, Object... args) {
         if (text != null && substring != null && text.contains(substring)) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return text;
     }
@@ -7683,7 +7663,7 @@ public final class BizAssert {
      */
     public static String doesNotContain(String text, String substring, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
         if (text != null && substring != null && text.contains(substring)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return text;
     }
@@ -7811,7 +7791,7 @@ public final class BizAssert {
     public static String contains(String text, String substring, String message, Object... args) {
         notNull(text, message, args);
         if (substring != null && !text.contains(substring)) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return text;
     }
@@ -7842,9 +7822,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String contains(String text, String substring, Supplier<String> messageSupplier, Object... args) {
-        notNull(text, formatMessage(nullSafeGet(messageSupplier), args));
+        notNull(text, format(nullSafeGet(messageSupplier), args));
         if (substring != null && !text.contains(substring)) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return text;
     }
@@ -7877,9 +7857,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String contains(String text, String substring, int code, String message, Object... args) {
-        notNull(text, formatMessage(message, args));
+        notNull(text, format(message, args));
         if (substring != null && !text.contains(substring)) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return text;
     }
@@ -7910,9 +7890,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String contains(String text, String substring, IErrorCode errorCode, Object... args) {
-        notNull(text, formatMessage(errorCode.getMessage(), args));
+        notNull(text, format(errorCode.getMessage(), args));
         if (substring != null && !text.contains(substring)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return text;
     }
@@ -7961,9 +7941,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String contains(String text, String substring, String message, ExceptionFactory factory, Object... args) {
-        notNull(text, formatMessage(message, args), factory);
+        notNull(text, format(message, args), factory);
         if (substring != null && !text.contains(substring)) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return text;
     }
@@ -7998,9 +7978,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String contains(String text, String substring, int code, String message, ExceptionFactory factory, Object... args) {
-        notNull(text, formatMessage(message, args), factory);
+        notNull(text, format(message, args), factory);
         if (substring != null && !text.contains(substring)) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return text;
     }
@@ -8033,9 +8013,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String contains(String text, String substring, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
-        notNull(text, formatMessage(errorCode.getMessage(), args), factory);
+        notNull(text, format(errorCode.getMessage(), args), factory);
         if (substring != null && !text.contains(substring)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return text;
     }
@@ -8165,9 +8145,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String startsWith(String text, String prefix, String message, Object... args) {
-        notNull(text, formatMessage(message, args));
+        notNull(text, format(message, args));
         if (prefix != null && !text.startsWith(prefix)) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return text;
     }
@@ -8198,9 +8178,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String startsWith(String text, String prefix, Supplier<String> messageSupplier, Object... args) {
-        notNull(text, formatMessage(nullSafeGet(messageSupplier), args));
+        notNull(text, format(nullSafeGet(messageSupplier), args));
         if (prefix != null && !text.startsWith(prefix)) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return text;
     }
@@ -8233,9 +8213,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String startsWith(String text, String prefix, int code, String message, Object... args) {
-        notNull(text, formatMessage(message, args));
+        notNull(text, format(message, args));
         if (prefix != null && !text.startsWith(prefix)) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return text;
     }
@@ -8266,9 +8246,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String startsWith(String text, String prefix, IErrorCode errorCode, Object... args) {
-        notNull(text, formatMessage(errorCode.getMessage(), args));
+        notNull(text, format(errorCode.getMessage(), args));
         if (prefix != null && !text.startsWith(prefix)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return text;
     }
@@ -8317,9 +8297,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String startsWith(String text, String prefix, String message, ExceptionFactory factory, Object... args) {
-        notNull(text, formatMessage(message, args), factory);
+        notNull(text, format(message, args), factory);
         if (prefix != null && !text.startsWith(prefix)) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return text;
     }
@@ -8354,9 +8334,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String startsWith(String text, String prefix, int code, String message, ExceptionFactory factory, Object... args) {
-        notNull(text, formatMessage(message, args), factory);
+        notNull(text, format(message, args), factory);
         if (prefix != null && !text.startsWith(prefix)) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return text;
     }
@@ -8389,9 +8369,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String startsWith(String text, String prefix, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
-        notNull(text, formatMessage(errorCode.getMessage(), args), factory);
+        notNull(text, format(errorCode.getMessage(), args), factory);
         if (prefix != null && !text.startsWith(prefix)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return text;
     }
@@ -8521,9 +8501,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String endsWith(String text, String suffix, String message, Object... args) {
-        notNull(text, formatMessage(message, args));
+        notNull(text, format(message, args));
         if (suffix != null && !text.endsWith(suffix)) {
-            throw newException(formatMessage(message, args));
+            throw newException(format(message, args));
         }
         return text;
     }
@@ -8554,9 +8534,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String endsWith(String text, String suffix, Supplier<String> messageSupplier, Object... args) {
-        notNull(text, formatMessage(nullSafeGet(messageSupplier), args));
+        notNull(text, format(nullSafeGet(messageSupplier), args));
         if (suffix != null && !text.endsWith(suffix)) {
-            throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+            throw newException(format(nullSafeGet(messageSupplier), args));
         }
         return text;
     }
@@ -8589,9 +8569,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String endsWith(String text, String suffix, int code, String message, Object... args) {
-        notNull(text, formatMessage(message, args));
+        notNull(text, format(message, args));
         if (suffix != null && !text.endsWith(suffix)) {
-            throw newException(code, formatMessage(message, args));
+            throw newException(code, format(message, args));
         }
         return text;
     }
@@ -8622,9 +8602,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String endsWith(String text, String suffix, IErrorCode errorCode, Object... args) {
-        notNull(text, formatMessage(errorCode.getMessage(), args));
+        notNull(text, format(errorCode.getMessage(), args));
         if (suffix != null && !text.endsWith(suffix)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
         }
         return text;
     }
@@ -8673,9 +8653,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String endsWith(String text, String suffix, String message, ExceptionFactory factory, Object... args) {
-        notNull(text, formatMessage(message, args), factory);
+        notNull(text, format(message, args), factory);
         if (suffix != null && !text.endsWith(suffix)) {
-            throw newException(formatMessage(message, args), factory);
+            throw newException(format(message, args), factory);
         }
         return text;
     }
@@ -8710,9 +8690,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String endsWith(String text, String suffix, int code, String message, ExceptionFactory factory, Object... args) {
-        notNull(text, formatMessage(message, args), factory);
+        notNull(text, format(message, args), factory);
         if (suffix != null && !text.endsWith(suffix)) {
-            throw newException(code, formatMessage(message, args), factory);
+            throw newException(code, format(message, args), factory);
         }
         return text;
     }
@@ -8745,9 +8725,9 @@ public final class BizAssert {
      * @return 原字符串
      */
     public static String endsWith(String text, String suffix, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
-        notNull(text, formatMessage(errorCode.getMessage(), args), factory);
+        notNull(text, format(errorCode.getMessage(), args), factory);
         if (suffix != null && !text.endsWith(suffix)) {
-            throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
         }
         return text;
     }
@@ -8882,7 +8862,7 @@ public final class BizAssert {
         notNull(collection, message, args);
         for (E element : collection) {
             if (element == null) {
-                throw newException(formatMessage(message, args));
+                throw newException(format(message, args));
             }
         }
         return collection;
@@ -8921,7 +8901,7 @@ public final class BizAssert {
         notNull(collection, messageSupplier, args);
         for (E element : collection) {
             if (element == null) {
-                throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+                throw newException(format(nullSafeGet(messageSupplier), args));
             }
         }
         return collection;
@@ -8962,7 +8942,7 @@ public final class BizAssert {
         notNull(collection, code, message, args);
         for (E element : collection) {
             if (element == null) {
-                throw newException(code, formatMessage(message, args));
+                throw newException(code, format(message, args));
             }
         }
         return collection;
@@ -9001,7 +8981,7 @@ public final class BizAssert {
         notNull(collection, errorCode, args);
         for (E element : collection) {
             if (element == null) {
-                throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+                throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
             }
         }
         return collection;
@@ -9061,7 +9041,7 @@ public final class BizAssert {
         notNull(collection, message, factory, args);
         for (E element : collection) {
             if (element == null) {
-                throw newException(formatMessage(message, args), factory);
+                throw newException(format(message, args), factory);
             }
         }
         return collection;
@@ -9104,7 +9084,7 @@ public final class BizAssert {
         notNull(collection, code, message, factory, args);
         for (E element : collection) {
             if (element == null) {
-                throw newException(code, formatMessage(message, args), factory);
+                throw newException(code, format(message, args), factory);
             }
         }
         return collection;
@@ -9145,7 +9125,7 @@ public final class BizAssert {
         notNull(collection, errorCode, factory, args);
         for (E element : collection) {
             if (element == null) {
-                throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+                throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
             }
         }
         return collection;
@@ -9295,7 +9275,7 @@ public final class BizAssert {
         notNull(array, message, args);
         for (T element : array) {
             if (element == null) {
-                throw newException(formatMessage(message, args));
+                throw newException(format(message, args));
             }
         }
         return array;
@@ -9332,7 +9312,7 @@ public final class BizAssert {
         notNull(array, messageSupplier, args);
         for (T element : array) {
             if (element == null) {
-                throw newException(formatMessage(nullSafeGet(messageSupplier), args));
+                throw newException(format(nullSafeGet(messageSupplier), args));
             }
         }
         return array;
@@ -9371,7 +9351,7 @@ public final class BizAssert {
         notNull(array, code, message, args);
         for (T element : array) {
             if (element == null) {
-                throw newException(code, formatMessage(message, args));
+                throw newException(code, format(message, args));
             }
         }
         return array;
@@ -9408,7 +9388,7 @@ public final class BizAssert {
         notNull(array, errorCode, args);
         for (T element : array) {
             if (element == null) {
-                throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+                throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
             }
         }
         return array;
@@ -9465,7 +9445,7 @@ public final class BizAssert {
         notNull(array, message, factory, args);
         for (T element : array) {
             if (element == null) {
-                throw newException(formatMessage(message, args), factory);
+                throw newException(format(message, args), factory);
             }
         }
         return array;
@@ -9506,7 +9486,7 @@ public final class BizAssert {
         notNull(array, code, message, factory, args);
         for (T element : array) {
             if (element == null) {
-                throw newException(code, formatMessage(message, args), factory);
+                throw newException(code, format(message, args), factory);
             }
         }
         return array;
@@ -9545,7 +9525,7 @@ public final class BizAssert {
         notNull(array, errorCode, factory, args);
         for (T element : array) {
             if (element == null) {
-                throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args), factory);
+                throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
             }
         }
         return array;
@@ -9945,7 +9925,7 @@ public final class BizAssert {
      * @throws RuntimeException 总是抛出
      */
     public static <T> T fail(String message, Object... args) {
-        throw newException(formatMessage(message, args));
+        throw newException(format(message, args));
     }
 
     /**
@@ -9972,7 +9952,7 @@ public final class BizAssert {
      * @throws RuntimeException 总是抛出
      */
     public static <T> T fail(int code, String message, Object... args) {
-        throw newException(code, formatMessage(message, args));
+        throw newException(code, format(message, args));
     }
 
     /**
@@ -9997,7 +9977,7 @@ public final class BizAssert {
      * @throws RuntimeException 总是抛出
      */
     public static <T> T fail(IErrorCode errorCode, Object... args) {
-        throw newException(errorCode.getCode(), formatMessage(errorCode.getMessage(), args));
+        throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
     }
 
     /**
@@ -10024,7 +10004,7 @@ public final class BizAssert {
      * @throws RuntimeException 总是抛出
      */
     public static <T> T fail(String message, ExceptionFactory factory, Object... args) {
-        throw newException(formatMessage(message, args), factory);
+        throw newException(format(message, args), factory);
     }
 
     /**
@@ -10053,7 +10033,7 @@ public final class BizAssert {
      * @throws RuntimeException 总是抛出
      */
     public static <T> T fail(int code, String message, ExceptionFactory factory, Object... args) {
-        throw newException(code, formatMessage(message, args), factory);
+        throw newException(code, format(message, args), factory);
     }
 
     // ========================================================================
