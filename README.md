@@ -418,7 +418,42 @@ BizAssert.stateOrThrow(!engine.isShutdown(),
 
 ---
 
-### 17. Fail (Unreachable Branches)
+### 17. Date & Time Assertions
+
+```java
+// ── future: assert that a date/time is after the current moment ───
+
+// java.util.Date
+Date expireDate = coupon.getExpireDate();
+BizAssert.future(expireDate, "Coupon has already expired");
+
+// java.time.LocalDate
+LocalDate activityDate = activity.getStartDate();
+BizAssert.future(activityDate, "Activity start date must be a future date");
+
+// java.time.LocalDateTime
+LocalDateTime scheduleTime = task.getScheduleTime();
+BizAssert.future(scheduleTime, "Task schedule time must be in the future");
+
+
+// ── past: assert that a date/time is before the current moment ────
+
+// java.util.Date
+Date birthday = user.getBirthday();
+BizAssert.past(birthday, "Birthday cannot be a future date");
+
+// java.time.LocalDate
+LocalDate joinDate = employee.getJoinDate();
+BizAssert.past(joinDate, "Join date cannot be a future date");
+
+// java.time.LocalDateTime
+LocalDateTime orderTime = order.getCreateTime();
+BizAssert.past(orderTime, "Order creation time is invalid");
+```
+
+---
+
+### 18. Fail (Unreachable Branches)
 
 `fail` always throws and is declared to return `T`, so it works in expressions and `switch` branches:
 
@@ -442,7 +477,7 @@ return BizAssert.fail("fatal", ExceptionFactory.ofMessage(FatalException::new));
 
 ---
 
-### 18. Error Code Enum
+### 19. Error Code Enum
 
 Define your business error codes by implementing `IErrorCode`:
 
@@ -485,7 +520,7 @@ BizAssert.isTrue(order.isPaid(), BizError.ORDER_NOT_PAID, order.getId());
 
 ---
 
-### 19. Complete Method Reference
+### 20. Complete Method Reference
 
 | Category | Method | Return | Description |
 |----------|--------|--------|-------------|
@@ -528,6 +563,12 @@ BizAssert.isTrue(order.isPaid(), BizError.ORDER_NOT_PAID, order.getId());
 | **Elements** | `noNullElements(Collection/T[], ...)` | original | Assert no null elements |
 | **State** | `state(...)` | `void` | Assert state condition |
 | | `stateOrThrow(...)` | `void` | Throw custom exception |
+| **Date & Time** | `future(...)`                         | `Date`/`LocalDate`/`LocalDate` | Assert that a date/time is after the current moment |
+|                | `futureAs(...)`                       | `Date`/`LocalDate`/`LocalDate`               | Label shorthand    |
+|                | `futureOrThrow(...)`                  | `Date`/`LocalDate`/`LocalDate` | Throw custom exception |
+|                | `past(...)`                           | `Date`/`LocalDate`/`LocalDate` | Assert that a date/time is before the current moment |
+|                | `pastAs(...)`                         | `Date`/`LocalDate`/`LocalDate`    | Label shorthand         |
+|                | `pastOrThrow(...)`                    | `Date`/`LocalDate`/`LocalDate` | Throw custom exception |
 | **Fail** | `fail(...)` | `T` (never) | Always throw, for unreachable code |
 
 ---

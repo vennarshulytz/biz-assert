@@ -418,7 +418,42 @@ BizAssert.stateOrThrow(!engine.isShutdown(),
 
 ---
 
-### 17. Fail（不可达分支）
+### 17. 日期时间断言
+
+```java
+// ── future：断言时间在当前时刻之后 ──────────────────────────────
+
+// java.util.Date
+Date expireDate = coupon.getExpireDate();
+BizAssert.future(expireDate, "优惠券已过期");
+
+// java.time.LocalDate
+LocalDate activityDate = activity.getStartDate();
+BizAssert.future(activityDate, "活动开始日期必须是未来日期");
+
+// java.time.LocalDateTime
+LocalDateTime scheduleTime = task.getScheduleTime();
+BizAssert.future(scheduleTime, "任务调度时间必须是未来时间");
+
+
+// ── past：断言时间在当前时刻之前 ────────────────────────────────
+
+// java.util.Date
+Date birthday = user.getBirthday();
+BizAssert.past(birthday, "生日不能是未来时间");
+
+// java.time.LocalDate
+LocalDate joinDate = employee.getJoinDate();
+BizAssert.past(joinDate, "入职日期不能是未来日期");
+
+// java.time.LocalDateTime
+LocalDateTime orderTime = order.getCreateTime();
+BizAssert.past(orderTime, "订单创建时间异常");
+```
+
+---
+
+### 18. Fail（不可达分支）
 
 `fail` 始终抛出异常，声明返回类型为 `T`，因此可在表达式和 `switch` 分支中使用：
 
@@ -442,7 +477,7 @@ return BizAssert.fail("致命错误", ExceptionFactory.ofMessage(FatalException:
 
 ---
 
-### 18. 错误码枚举
+### 19. 错误码枚举
 
 通过实现 `IErrorCode` 接口定义业务错误码：
 
@@ -485,7 +520,7 @@ BizAssert.isTrue(order.isPaid(), BizError.ORDER_NOT_PAID, order.getId());
 
 ---
 
-### 19. 完整方法速查表
+### 20. 完整方法速查表
 
 | 类别           | 方法                                  | 返回值          | 说明                         |
 | -------------- | ------------------------------------- | --------------- | ---------------------------- |
@@ -528,6 +563,12 @@ BizAssert.isTrue(order.isPaid(), BizError.ORDER_NOT_PAID, order.getId());
 | **元素**       | `noNullElements(Collection/T[], ...)` | 原类型          | 断言无 null 元素             |
 | **状态**       | `state(...)`                          | `void`          | 断言状态条件                 |
 |                | `stateOrThrow(...)`                   | `void`          | 抛自定义异常                 |
+| **日期时间**   | `future(...)`                         | `Date`/`LocalDate`/`LocalDate` | 断言时间在当前时刻之后      |
+|                | `futureAs(...)`                       | `Date`/`LocalDate`/`LocalDate`               | Label 简写                   |
+|                | `futureOrThrow(...)`                  | `Date`/`LocalDate`/`LocalDate` | 抛自定义异常                 |
+|                | `past(...)`                           | `Date`/`LocalDate`/`LocalDate` | 断言时间在当前时刻之前 |
+|                | `pastAs(...)`                         | `Date`/`LocalDate`/`LocalDate`    | Label 简写                        |
+|                | `pastOrThrow(...)`                    | `Date`/`LocalDate`/`LocalDate` | 抛自定义异常                 |
 | **失败**       | `fail(...)`                           | `T`（永不返回） | 直接抛异常，用于不可达代码   |
 
 ---

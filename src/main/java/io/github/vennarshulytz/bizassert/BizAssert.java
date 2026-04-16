@@ -7,7 +7,10 @@ import io.github.vennarshulytz.bizassert.exception.IErrorCode;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -9888,6 +9891,2040 @@ public final class BizAssert {
         if (!expression) {
             throw newException(code, label + " check failed", factory);
         }
+    }
+
+    // ========================================================================
+    //  future (Date) — 断言时间在当前时刻之后
+    // ========================================================================
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（无消息，使用默认消息）。
+     * <p>校验规则：{@code date} 必须严格晚于 {@code new Date()}。</p>
+     *
+     * @param date 待校验日期
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date future(Date date) {
+        return future(date, "parameter must be a future date");
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（Pass-through）。
+     *
+     * @param date    待校验日期
+     * @param message 错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date future(Date date, String message) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(message);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（占位符消息）。
+     *
+     * @param date    待校验日期
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date future(Date date, String message, Object... args) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(format(message, args));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（延迟构建消息）。
+     *
+     * @param date            待校验日期
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date future(Date date, Supplier<String> messageSupplier) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(nullSafeGet(messageSupplier));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（延迟构建消息 + 占位符参数）。
+     *
+     * @param date            待校验日期
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date future(Date date, Supplier<String> messageSupplier, Object... args) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(format(nullSafeGet(messageSupplier), args));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（带错误码）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param message 错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date future(Date date, int code, String message) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(code, message);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（带错误码 + 占位符参数）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date future(Date date, int code, String message, Object... args) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(code, format(message, args));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（错误枚举）。
+     *
+     * @param date      待校验日期
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date future(Date date, IErrorCode errorCode) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(errorCode.getCode(), errorCode.getMessage());
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（错误枚举 + 占位符参数）。
+     *
+     * @param date      待校验日期
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param args      占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date future(Date date, IErrorCode errorCode, Object... args) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（指定异常工厂 + 默认消息）。
+     *
+     * @param date    待校验日期
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date future(Date date, ExceptionFactory factory) {
+        if (date == null || !date.after(new Date())) {
+            throw newException("parameter must be a future date", factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（指定异常工厂）。
+     *
+     * @param date    待校验日期
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date future(Date date, String message, ExceptionFactory factory) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(message, factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（指定异常工厂 + 占位符参数）。
+     *
+     * @param date    待校验日期
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date future(Date date, String message, ExceptionFactory factory, Object... args) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(format(message, args), factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（指定异常工厂 + 错误码）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date future(Date date, int code, String message, ExceptionFactory factory) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(code, message, factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date future(Date date, int code, String message, ExceptionFactory factory, Object... args) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(code, format(message, args), factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（指定异常工厂 + 错误枚举）。
+     *
+     * @param date      待校验日期
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date future(Date date, IErrorCode errorCode, ExceptionFactory factory) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param date      待校验日期
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date future(Date date, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（直接传入异常实例）。
+     *
+     * @param date              待校验日期
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来，
+     *                          抛出由 {@code exceptionSupplier} 提供的异常
+     */
+    public static Date futureOrThrow(Date date, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (date == null || !date.after(new Date())) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（label 机制）。
+     * <p>自动生成消息：{label} must be a future date</p>
+     *
+     * @param date  待校验日期
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date futureAs(Date date, String label) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(label + " must be a future date");
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（label 机制 + 错误码）。
+     *
+     * @param date  待校验日期
+     * @param code  错误码
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date futureAs(Date date, int code, String label) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(code, label + " must be a future date");
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（label 机制 + 指定异常工厂）。
+     *
+     * @param date    待校验日期
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date futureAs(Date date, String label, ExceptionFactory factory) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(label + " must be a future date", factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之后（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static Date futureAs(Date date, int code, String label, ExceptionFactory factory) {
+        if (date == null || !date.after(new Date())) {
+            throw newException(code, label + " must be a future date", factory);
+        }
+        return date;
+    }
+
+    // ========================================================================
+    //  past (Date) — 断言时间在当前时刻之前
+    // ========================================================================
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（无消息，使用默认消息）。
+     * <p>校验规则：{@code date} 必须严格早于 {@code new Date()}。</p>
+     *
+     * @param date 待校验日期
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date past(Date date) {
+        return past(date, "parameter must be a past date");
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（Pass-through）。
+     *
+     * @param date    待校验日期
+     * @param message 错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date past(Date date, String message) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(message);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（占位符消息）。
+     *
+     * @param date    待校验日期
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date past(Date date, String message, Object... args) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(format(message, args));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（延迟构建消息）。
+     *
+     * @param date            待校验日期
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date past(Date date, Supplier<String> messageSupplier) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(nullSafeGet(messageSupplier));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（延迟构建消息 + 占位符参数）。
+     *
+     * @param date            待校验日期
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date past(Date date, Supplier<String> messageSupplier, Object... args) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(format(nullSafeGet(messageSupplier), args));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（带错误码）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param message 错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date past(Date date, int code, String message) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(code, message);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（带错误码 + 占位符参数）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date past(Date date, int code, String message, Object... args) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(code, format(message, args));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（错误枚举）。
+     *
+     * @param date      待校验日期
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date past(Date date, IErrorCode errorCode) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(errorCode.getCode(), errorCode.getMessage());
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（错误枚举 + 占位符参数）。
+     *
+     * @param date      待校验日期
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param args      占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date past(Date date, IErrorCode errorCode, Object... args) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（指定异常工厂 + 默认消息）。
+     *
+     * @param date    待校验日期
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date past(Date date, ExceptionFactory factory) {
+        if (date == null || !date.before(new Date())) {
+            throw newException("parameter must be a past date", factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（指定异常工厂）。
+     *
+     * @param date    待校验日期
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date past(Date date, String message, ExceptionFactory factory) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(message, factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（指定异常工厂 + 占位符参数）。
+     *
+     * @param date    待校验日期
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date past(Date date, String message, ExceptionFactory factory, Object... args) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(format(message, args), factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（指定异常工厂 + 错误码）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date past(Date date, int code, String message, ExceptionFactory factory) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(code, message, factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date past(Date date, int code, String message, ExceptionFactory factory, Object... args) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(code, format(message, args), factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（指定异常工厂 + 错误枚举）。
+     *
+     * @param date      待校验日期
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date past(Date date, IErrorCode errorCode, ExceptionFactory factory) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param date      待校验日期
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date past(Date date, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（直接传入异常实例）。
+     *
+     * @param date              待校验日期
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去，
+     *                          抛出由 {@code exceptionSupplier} 提供的异常
+     */
+    public static Date pastOrThrow(Date date, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (date == null || !date.before(new Date())) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（label 机制）。
+     * <p>自动生成消息：{label} must be a past date</p>
+     *
+     * @param date  待校验日期
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date pastAs(Date date, String label) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(label + " must be a past date");
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（label 机制 + 错误码）。
+     *
+     * @param date  待校验日期
+     * @param code  错误码
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date pastAs(Date date, int code, String label) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(code, label + " must be a past date");
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（label 机制 + 指定异常工厂）。
+     *
+     * @param date    待校验日期
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date pastAs(Date date, String label, ExceptionFactory factory) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(label + " must be a past date", factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link Date} 在当前时刻之前（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static Date pastAs(Date date, int code, String label, ExceptionFactory factory) {
+        if (date == null || !date.before(new Date())) {
+            throw newException(code, label + " must be a past date", factory);
+        }
+        return date;
+    }
+
+    // ========================================================================
+    //  future (LocalDate) — 断言日期在今天之后
+    // ========================================================================
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（无消息，使用默认消息）。
+     * <p>校验规则：{@code date} 必须严格晚于 {@link LocalDate#now()}。</p>
+     *
+     * @param date 待校验日期
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate future(LocalDate date) {
+        return future(date, "parameter must be a future date");
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（Pass-through）。
+     *
+     * @param date    待校验日期
+     * @param message 错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate future(LocalDate date, String message) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(message);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（占位符消息）。
+     *
+     * @param date    待校验日期
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate future(LocalDate date, String message, Object... args) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(format(message, args));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（延迟构建消息）。
+     *
+     * @param date            待校验日期
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate future(LocalDate date, Supplier<String> messageSupplier) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(nullSafeGet(messageSupplier));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（延迟构建消息 + 占位符参数）。
+     *
+     * @param date            待校验日期
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate future(LocalDate date, Supplier<String> messageSupplier, Object... args) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(format(nullSafeGet(messageSupplier), args));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（带错误码）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param message 错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate future(LocalDate date, int code, String message) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(code, message);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（带错误码 + 占位符参数）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate future(LocalDate date, int code, String message, Object... args) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(code, format(message, args));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（错误枚举）。
+     *
+     * @param date      待校验日期
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate future(LocalDate date, IErrorCode errorCode) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(errorCode.getCode(), errorCode.getMessage());
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（错误枚举 + 占位符参数）。
+     *
+     * @param date      待校验日期
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param args      占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate future(LocalDate date, IErrorCode errorCode, Object... args) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（指定异常工厂 + 默认消息）。
+     *
+     * @param date    待校验日期
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate future(LocalDate date, ExceptionFactory factory) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException("parameter must be a future date", factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（指定异常工厂）。
+     *
+     * @param date    待校验日期
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate future(LocalDate date, String message, ExceptionFactory factory) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(message, factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（指定异常工厂 + 占位符参数）。
+     *
+     * @param date    待校验日期
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate future(LocalDate date, String message, ExceptionFactory factory, Object... args) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(format(message, args), factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（指定异常工厂 + 错误码）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate future(LocalDate date, int code, String message, ExceptionFactory factory) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(code, message, factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate future(LocalDate date, int code, String message, ExceptionFactory factory, Object... args) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(code, format(message, args), factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（指定异常工厂 + 错误枚举）。
+     *
+     * @param date      待校验日期
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate future(LocalDate date, IErrorCode errorCode, ExceptionFactory factory) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param date      待校验日期
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate future(LocalDate date, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（直接传入异常实例）。
+     *
+     * @param date              待校验日期
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来，
+     *                          抛出由 {@code exceptionSupplier} 提供的异常
+     */
+    public static LocalDate futureOrThrow(LocalDate date, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（label 机制）。
+     * <p>自动生成消息：{label} must be a future date</p>
+     *
+     * @param date  待校验日期
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate futureAs(LocalDate date, String label) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(label + " must be a future date");
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（label 机制 + 错误码）。
+     *
+     * @param date  待校验日期
+     * @param code  错误码
+     * @param label 字段/参数名称，��于生成语义化错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate futureAs(LocalDate date, int code, String label) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(code, label + " must be a future date");
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（label 机制 + 指定异常工厂）。
+     *
+     * @param date    待校验日期
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate futureAs(LocalDate date, String label, ExceptionFactory factory) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(label + " must be a future date", factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之后（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在未来
+     */
+    public static LocalDate futureAs(LocalDate date, int code, String label, ExceptionFactory factory) {
+        if (date == null || !date.isAfter(LocalDate.now())) {
+            throw newException(code, label + " must be a future date", factory);
+        }
+        return date;
+    }
+
+    // ========================================================================
+    //  past (LocalDate) — 断言日期在今天之前
+    // ========================================================================
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（无消息，使用默认消息）。
+     * <p>校验规则：{@code date} 必须严格早于 {@link LocalDate#now()}。</p>
+     *
+     * @param date 待校验日期
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate past(LocalDate date) {
+        return past(date, "parameter must be a past date");
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（Pass-through）。
+     *
+     * @param date    待校验日期
+     * @param message 错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate past(LocalDate date, String message) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(message);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（占位符消息）。
+     *
+     * @param date    待校验日期
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate past(LocalDate date, String message, Object... args) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(format(message, args));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（延迟构建消息）。
+     *
+     * @param date            待校验日期
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate past(LocalDate date, Supplier<String> messageSupplier) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(nullSafeGet(messageSupplier));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（延迟构建消息 + 占位符参数）。
+     *
+     * @param date            待校验日期
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate past(LocalDate date, Supplier<String> messageSupplier, Object... args) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(format(nullSafeGet(messageSupplier), args));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（带错误码）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param message 错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate past(LocalDate date, int code, String message) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(code, message);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（带错误码 + 占位符参数）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args    占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate past(LocalDate date, int code, String message, Object... args) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(code, format(message, args));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（错误枚举）。
+     *
+     * @param date      待校验日期
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate past(LocalDate date, IErrorCode errorCode) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(errorCode.getCode(), errorCode.getMessage());
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（错误枚举 + 占位符参数）。
+     *
+     * @param date      待校验日期
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param args      占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate past(LocalDate date, IErrorCode errorCode, Object... args) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（指定异常工厂 + 默认消息）。
+     *
+     * @param date    待校验日期
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate past(LocalDate date, ExceptionFactory factory) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException("parameter must be a past date", factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（指定异常工厂）。
+     *
+     * @param date    待校验日期
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate past(LocalDate date, String message, ExceptionFactory factory) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(message, factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（指定异常工厂 + 占位符参数）。
+     *
+     * @param date    待校验日期
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate past(LocalDate date, String message, ExceptionFactory factory, Object... args) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(format(message, args), factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（指定异常工厂 + 错误码）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param message 错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate past(LocalDate date, int code, String message, ExceptionFactory factory) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(code, message, factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param message 错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory 异常工厂，用于自定义异常类型
+     * @param args    占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate past(LocalDate date, int code, String message, ExceptionFactory factory, Object... args) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(code, format(message, args), factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（指定异常工厂 + 错误枚举）。
+     *
+     * @param date      待校验日期
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate past(LocalDate date, IErrorCode errorCode, ExceptionFactory factory) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param date      待校验日期
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate past(LocalDate date, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（直接传入异常实例）。
+     *
+     * @param date              待校验日期
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去，
+     *                          抛出由 {@code exceptionSupplier} 提供的异常
+     */
+    public static LocalDate pastOrThrow(LocalDate date, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（label 机制）。
+     * <p>自动生成消息：{label} must be a past date</p>
+     *
+     * @param date  待校验日期
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate pastAs(LocalDate date, String label) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(label + " must be a past date");
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（label 机制 + 错误码）。
+     *
+     * @param date  待校验日期
+     * @param code  错误码
+     * @param label 字段/参数名称，用于生成语义化错误消息
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate pastAs(LocalDate date, int code, String label) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(code, label + " must be a past date");
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（label 机制 + 指定异常工厂）。
+     *
+     * @param date    待校验日期
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate pastAs(LocalDate date, String label, ExceptionFactory factory) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(label + " must be a past date", factory);
+        }
+        return date;
+    }
+
+    /**
+     * 断言 {@link LocalDate} 在今天之前（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param date    待校验日期
+     * @param code    错误码
+     * @param label   字段/参数名称，用于生成语义化错误消息
+     * @param factory 异常工厂，用于自定义异常类型
+     * @return 校验通过的日期
+     * @throws RuntimeException 若 {@code date} 为 {@code null} 或不在过去
+     */
+    public static LocalDate pastAs(LocalDate date, int code, String label, ExceptionFactory factory) {
+        if (date == null || !date.isBefore(LocalDate.now())) {
+            throw newException(code, label + " must be a past date", factory);
+        }
+        return date;
+    }
+
+    // ========================================================================
+    //  future (LocalDateTime) — 断言时间在当前时刻之后
+    // ========================================================================
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（无消息，使用默认消息）。
+     * <p>校验规则：{@code dateTime} 必须严格晚于 {@link LocalDateTime#now()}。</p>
+     *
+     * @param dateTime 待校验时间
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime future(LocalDateTime dateTime) {
+        return future(dateTime, "parameter must be a future date time");
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（Pass-through）。
+     *
+     * @param dateTime 待校验时间
+     * @param message  错误消息
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime future(LocalDateTime dateTime, String message) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(message);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（占位符消息）。
+     *
+     * @param dateTime 待校验时间
+     * @param message  错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args     占位符参数
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime future(LocalDateTime dateTime, String message, Object... args) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(format(message, args));
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（延迟构建消息）。
+     *
+     * @param dateTime        待校验时间
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime future(LocalDateTime dateTime, Supplier<String> messageSupplier) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(nullSafeGet(messageSupplier));
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（延迟构建消息 + 占位符参数）。
+     *
+     * @param dateTime        待校验时间
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime future(LocalDateTime dateTime, Supplier<String> messageSupplier, Object... args) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(format(nullSafeGet(messageSupplier), args));
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（带错误码）。
+     *
+     * @param dateTime 待校验时间
+     * @param code     错误码
+     * @param message  错误消息
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime future(LocalDateTime dateTime, int code, String message) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(code, message);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（带错误码 + 占位符参数）。
+     *
+     * @param dateTime 待校验时间
+     * @param code     错误码
+     * @param message  错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args     占位符参数
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime future(LocalDateTime dateTime, int code, String message, Object... args) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(code, format(message, args));
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（错误枚举）。
+     *
+     * @param dateTime  待校验时间
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime future(LocalDateTime dateTime, IErrorCode errorCode) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(errorCode.getCode(), errorCode.getMessage());
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（错误枚举 + 占位符参数）。
+     *
+     * @param dateTime  待校验时间
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param args      占位符参数
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime future(LocalDateTime dateTime, IErrorCode errorCode, Object... args) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（指定异常工厂 + 默认消息）。
+     *
+     * @param dateTime 待校验时间
+     * @param factory  异常工厂，用于自定义异常类型
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime future(LocalDateTime dateTime, ExceptionFactory factory) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException("parameter must be a future date time", factory);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（指定异常工厂）。
+     *
+     * @param dateTime 待校验时间
+     * @param message  错误消息
+     * @param factory  异常工厂，用于自定义异常类型
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime future(LocalDateTime dateTime, String message, ExceptionFactory factory) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(message, factory);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（指定异常工厂 + 占位符参数）。
+     *
+     * @param dateTime 待校验时间
+     * @param message  错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory  异常工厂，用于自定义异常类型
+     * @param args     占位符参数
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime future(LocalDateTime dateTime, String message, ExceptionFactory factory, Object... args) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(format(message, args), factory);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（指定异常工厂 + 错误码）。
+     *
+     * @param dateTime 待校验时间
+     * @param code     错误码
+     * @param message  错误消息
+     * @param factory  异常工厂，用于自定义异常类型
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime future(LocalDateTime dateTime, int code, String message, ExceptionFactory factory) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(code, message, factory);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param dateTime 待校验时间
+     * @param code     错误码
+     * @param message  错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory  异常工厂，用于自定义异常类型
+     * @param args     占位符参数
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime future(LocalDateTime dateTime, int code, String message, ExceptionFactory factory, Object... args) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(code, format(message, args), factory);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（指定异常工厂 + 错误枚举）。
+     *
+     * @param dateTime  待校验时间
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime future(LocalDateTime dateTime, IErrorCode errorCode, ExceptionFactory factory) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param dateTime  待校验时间
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime future(LocalDateTime dateTime, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（直接传入异常实例）。
+     *
+     * @param dateTime          待校验时间
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来，
+     *                          抛出由 {@code exceptionSupplier} 提供的异常
+     */
+    public static LocalDateTime futureOrThrow(LocalDateTime dateTime, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（label 机制）。
+     * <p>自动生成消息：{label} must be a future date time</p>
+     *
+     * @param dateTime 待校验时间
+     * @param label    字段/参数名称，用于生成语义化错误消息
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime futureAs(LocalDateTime dateTime, String label) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(label + " must be a future date time");
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（label 机制 + 错误码）。
+     *
+     * @param dateTime 待校验时间
+     * @param code     错误码
+     * @param label    字段/参数名称，用于生成语义化错误消息
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime futureAs(LocalDateTime dateTime, int code, String label) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(code, label + " must be a future date time");
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（label 机制 + 指定异常工厂）。
+     *
+     * @param dateTime 待校验时间
+     * @param label    字段/参数名称，用于生成语义化错误消息
+     * @param factory  异常工厂，用于自定义异常类型
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime futureAs(LocalDateTime dateTime, String label, ExceptionFactory factory) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(label + " must be a future date time", factory);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之后（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param dateTime 待校验时间
+     * @param code     错误码
+     * @param label    字段/参数名称，用于生成语义化错误消息
+     * @param factory  异常工厂，用于自定义异常类型
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在未来
+     */
+    public static LocalDateTime futureAs(LocalDateTime dateTime, int code, String label, ExceptionFactory factory) {
+        if (dateTime == null || !dateTime.isAfter(LocalDateTime.now())) {
+            throw newException(code, label + " must be a future date time", factory);
+        }
+        return dateTime;
+    }
+
+    // ========================================================================
+    //  past (LocalDateTime) — 断言时间在当前时刻之前
+    // ========================================================================
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（无消息，使用默认消息）。
+     * <p>校验规则：{@code dateTime} 必须严格早于 {@link LocalDateTime#now()}。</p>
+     *
+     * @param dateTime 待校验时间
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime past(LocalDateTime dateTime) {
+        return past(dateTime, "parameter must be a past date time");
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（Pass-through）。
+     *
+     * @param dateTime 待校验时间
+     * @param message  错误消息
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime past(LocalDateTime dateTime, String message) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(message);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（占位符消息）。
+     *
+     * @param dateTime 待校验时间
+     * @param message  错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args     占位符参数
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime past(LocalDateTime dateTime, String message, Object... args) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(format(message, args));
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（延迟构建消息）。
+     *
+     * @param dateTime        待校验时间
+     * @param messageSupplier 错误消息提供者（仅在断言失败时调用）
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime past(LocalDateTime dateTime, Supplier<String> messageSupplier) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(nullSafeGet(messageSupplier));
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（延迟构建消息 + 占位符参数）。
+     *
+     * @param dateTime        待校验时间
+     * @param messageSupplier 错误消息模板提供者（仅在断言失败时调用）
+     * @param args            占位符参数
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime past(LocalDateTime dateTime, Supplier<String> messageSupplier, Object... args) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(format(nullSafeGet(messageSupplier), args));
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（带错误码）。
+     *
+     * @param dateTime 待校验时间
+     * @param code     错误码
+     * @param message  错误消息
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime past(LocalDateTime dateTime, int code, String message) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(code, message);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（带错误码 + 占位符参数）。
+     *
+     * @param dateTime 待校验时间
+     * @param code     错误码
+     * @param message  错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param args     占位符参数
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime past(LocalDateTime dateTime, int code, String message, Object... args) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(code, format(message, args));
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（错误枚举）。
+     *
+     * @param dateTime  待校验时间
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime past(LocalDateTime dateTime, IErrorCode errorCode) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(errorCode.getCode(), errorCode.getMessage());
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（错误枚举 + 占位符参数）。
+     *
+     * @param dateTime  待校验时间
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param args      占位符参数
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime past(LocalDateTime dateTime, IErrorCode errorCode, Object... args) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args));
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（指定异常工厂 + 默认消息）。
+     *
+     * @param dateTime 待校验时间
+     * @param factory  异常工厂，用于自定义异常类型
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime past(LocalDateTime dateTime, ExceptionFactory factory) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException("parameter must be a past date time", factory);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（指定异常工厂）。
+     *
+     * @param dateTime 待校验时间
+     * @param message  错误消息
+     * @param factory  异常工厂，用于自定义异常类型
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime past(LocalDateTime dateTime, String message, ExceptionFactory factory) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(message, factory);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（指定异常工厂 + 占位符参数）。
+     *
+     * @param dateTime 待校验时间
+     * @param message  错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory  异常工厂，用于自定义异常类型
+     * @param args     占位符参数
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime past(LocalDateTime dateTime, String message, ExceptionFactory factory, Object... args) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(format(message, args), factory);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（指定异常工厂 + 错误码）。
+     *
+     * @param dateTime 待校验时间
+     * @param code     错误码
+     * @param message  错误消息
+     * @param factory  异常工厂，用于自定义异常类型
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime past(LocalDateTime dateTime, int code, String message, ExceptionFactory factory) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(code, message, factory);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（指定异常工厂 + 错误码 + 占位符参数）。
+     *
+     * @param dateTime 待校验时间
+     * @param code     错误码
+     * @param message  错误消息模板，支持 {@code {}, {}, ...} 占位符
+     * @param factory  异常工厂，用于自定义异常类型
+     * @param args     占位符参数
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime past(LocalDateTime dateTime, int code, String message, ExceptionFactory factory, Object... args) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(code, format(message, args), factory);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（指定异常工厂 + 错误枚举）。
+     *
+     * @param dateTime  待校验时间
+     * @param errorCode 错误枚举，包含错误码与错误消息
+     * @param factory   异常工厂，用于自定义异常类型
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime past(LocalDateTime dateTime, IErrorCode errorCode, ExceptionFactory factory) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(errorCode.getCode(), errorCode.getMessage(), factory);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（指定异常工厂 + 错误枚举 + 占位符参数）。
+     *
+     * @param dateTime  待校验时间
+     * @param errorCode 错误枚举，消息模板支持 {@code {}, {}, ...} 占位符
+     * @param factory   异常工厂，用于自定义异常类型
+     * @param args      占位符参数
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime past(LocalDateTime dateTime, IErrorCode errorCode, ExceptionFactory factory, Object... args) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(errorCode.getCode(), format(errorCode.getMessage(), args), factory);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（直接传入异常实例）。
+     *
+     * @param dateTime          待校验时间
+     * @param exceptionSupplier 异常提供者（仅在断言失败时调用）
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去，
+     *                          抛出由 {@code exceptionSupplier} 提供的异常
+     */
+    public static LocalDateTime pastOrThrow(LocalDateTime dateTime, Supplier<? extends RuntimeException> exceptionSupplier) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw nullSafeGetException(exceptionSupplier);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（label 机制）。
+     * <p>自动生成消息：{label} must be a past date time</p>
+     *
+     * @param dateTime 待校验时间
+     * @param label    字段/参数名称，用于生成语义化错误消息
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime pastAs(LocalDateTime dateTime, String label) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(label + " must be a past date time");
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（label 机制 + 错误码）。
+     *
+     * @param dateTime 待校验时间
+     * @param code     错误码
+     * @param label    字段/参数名称，用于生成语义化错误消息
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime pastAs(LocalDateTime dateTime, int code, String label) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(code, label + " must be a past date time");
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（label 机制 + 指定异常工厂）。
+     *
+     * @param dateTime 待校验时间
+     * @param label    字段/参数名称，用于生成语义化错误消息
+     * @param factory  异常工厂，用于自定义异常类型
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime pastAs(LocalDateTime dateTime, String label, ExceptionFactory factory) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(label + " must be a past date time", factory);
+        }
+        return dateTime;
+    }
+
+    /**
+     * 断言 {@link LocalDateTime} 在当前时刻之前（label 机制 + 错误码 + 指定异常工厂）。
+     *
+     * @param dateTime 待校验时间
+     * @param code     错误码
+     * @param label    字段/参数名称，用于生成语义化错误消息
+     * @param factory  异常工厂，用于自定义异常类型
+     * @return 校验通过的时间
+     * @throws RuntimeException 若 {@code dateTime} 为 {@code null} 或不在过去
+     */
+    public static LocalDateTime pastAs(LocalDateTime dateTime, int code, String label, ExceptionFactory factory) {
+        if (dateTime == null || !dateTime.isBefore(LocalDateTime.now())) {
+            throw newException(code, label + " must be a past date time", factory);
+        }
+        return dateTime;
     }
 
     // ========================================================================
